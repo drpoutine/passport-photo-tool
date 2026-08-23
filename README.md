@@ -8,6 +8,10 @@ Your photo and your passport scan are biometric documents. This tool never
 uploads them anywhere: every crop, resize, compression pass, and background
 removal runs on your own machine. Open the file, do the job, close the tab.
 
+**▶ Use it now: [drpoutine.github.io/passport-photo-tool](https://drpoutine.github.io/passport-photo-tool/)** —
+the same file served as-is by GitHub Pages. Your images still never leave your
+machine; downloading the file and double-clicking it works identically.
+
 ![Photos & print sheet](docs/tab1-photos.png)
 
 ## What it does
@@ -83,10 +87,17 @@ yourself before trusting either.
 
 ## Getting started
 
+**Online:** open [drpoutine.github.io/passport-photo-tool](https://drpoutine.github.io/passport-photo-tool/).
+
+**Offline / local:**
+
 1. Download [`passport-photo-4x6-sheet.html`](passport-photo-4x6-sheet.html)
    (one file, ~130 KB).
 2. Double-click it. It opens and works from `file://` — no server needed.
 3. Drop in a photo.
+
+Either way, processing happens in your browser — the hosted copy is byte-identical
+to the file in this repo.
 
 ## What needs the internet
 
