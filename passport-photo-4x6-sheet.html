@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passport photos on a 4×6 sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* subtractive primaries — the inks a photo lab actually prints with */
+  --cyan:#0089a8;
+  --magenta:#c31b5e;
+  --amber:#b57200;
+
+  --ground:#d8dcdb;
+  --paper:#ffffff;
+  --ink:#15181a;
+  --muted:#666e6d;
+  --faint:#8e9694;
+  --rule:#c4cac8;
+  --rule-soft:#e3e7e6;
+
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  padding:24px 16px 64px;
+}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* ---------- masthead ---------- */
+.masthead{
+  border-bottom:2px solid var(--ink);
+  padding-bottom:14px;margin-bottom:24px;
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 28px;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.16em;color:var(--muted);
+}
+h1{
+  font-family:var(--cond);font-weight:700;font-size:clamp(28px,4.6vw,44px);
+  letter-spacing:-.015em;line-height:1;margin:6px 0 0;
+}
+.masthead .lede{
+  font-size:14px;color:var(--muted);max-width:34ch;margin:0 0 2px auto;
+}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:0;margin:0 0 22px;border-bottom:1px solid var(--rule)}
+.tabs button{
+  font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.04em;
+  text-transform:uppercase;background:none;border:0;border-bottom:3px solid transparent;
+  padding:11px 18px;margin-bottom:-1px;cursor:pointer;color:var(--muted);
+}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--magenta)}
+.tabs button:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+
+.docprev{
+  background:#eef0ef;border:1px solid var(--rule);padding:10px;
+  display:flex;align-items:center;justify-content:center;min-height:150px;
+}
+.docprev img{display:block;max-width:100%;max-height:300px;background:#fff}
+.rotrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rotrow .btn{font-size:12px;padding:6px 12px}
+
+/* passport page tab */
+.doccols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.docout{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto;padding:0 2px 4px 0}
+@media (max-width:920px){.doccols{grid-template-columns:minmax(0,1fr)}.docout{position:static;max-height:none;overflow:visible}}
+.numin{
+  font-family:var(--mono);font-size:13px;color:inherit;
+  border:1px solid var(--rule);background:#fff;padding:8px 10px;width:120px;
+}
+.numin:focus{outline:2px solid var(--cyan);outline-offset:1px}
+
+/* MRZ inspector controls */
+.ziprow{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:10px}
+.ziprow .field{flex:1;min-width:150px;margin:0}
+.ziprow .seg{flex:0 0 auto}
+
+/* experimental AI tab */
+.aipill{
+  font-family:var(--mono);font-size:11px;line-height:1.5;letter-spacing:.03em;
+  border:1px solid var(--rule);background:#fbfcfc;color:var(--muted);
+  padding:8px 10px;display:block;
+}
+.aipill.ok{border-color:var(--cyan);color:var(--cyan)}
+.aipill.bad{border-color:#e6cf9a;background:#fdf6e6;color:#6b4a00}
+.cmprow{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.cmpcol{flex:0 1 172px;min-width:130px}
+.cmpbox{border:1px solid var(--rule);background:#fff}
+.cmpbox canvas{display:block;width:100%;height:auto}
+.cmplab{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);text-align:center;margin:5px 0 0;
+}
+.dllist{font-family:var(--mono);font-size:10.5px;line-height:1.8;word-break:break-all;
+  color:var(--muted);margin:8px 0 0;padding-left:0;list-style:none}
+.dllist a{color:var(--cyan)}
+
+/* crop stage */
+.cropstage{
+  position:relative;margin:0 auto;background:#2a2e2d;
+  touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden;
+}
+.cropstage img{display:block;width:100%;height:100%;object-fit:fill}
+.shade{position:absolute;background:rgba(20,24,26,.62);pointer-events:none}
+.croprect{position:absolute;border:1.5px solid var(--cyan);cursor:move}
+.croprect::before,.croprect::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+}
+.croprect::before{
+  border-left:1px dashed rgba(255,255,255,.35);border-right:1px dashed rgba(255,255,255,.35);
+  left:33.33%;right:33.33%;
+}
+.croprect::after{
+  border-top:1px dashed rgba(255,255,255,.35);border-bottom:1px dashed rgba(255,255,255,.35);
+  top:33.33%;bottom:33.33%;
+}
+.ch{position:absolute;width:20px;height:20px;background:var(--cyan);border:2px solid #fff;z-index:2}
+.ch.nw{left:-10px;top:-10px;cursor:nwse-resize}
+.ch.ne{right:-10px;top:-10px;cursor:nesw-resize}
+.ch.sw{left:-10px;bottom:-10px;cursor:nesw-resize}
+.ch.se{right:-10px;bottom:-10px;cursor:nwse-resize}
+
+/* 1:1 inspector */
+.inspect{
+  border:1px solid var(--rule);background:#fff;overflow:auto;
+  padding:0;margin-top:10px;
+}
+.inspect canvas{display:block;image-rendering:pixelated}
+.inspectlab{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin:14px 0 4px;
+}
+
+/* ---------- panels ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.panel{
+  background:var(--paper);
+  border:1px solid var(--rule);
+  padding:18px;
+}
+.panel + .panel{margin-top:20px}
+
+.phead{display:flex;align-items:baseline;gap:10px;margin:0 0 14px}
+.pnum{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  background:var(--ink);color:var(--paper);
+  padding:2px 6px;letter-spacing:.06em;flex:none;
+}
+.ptitle{
+  font-family:var(--cond);font-weight:700;font-size:17px;
+  letter-spacing:.02em;text-transform:uppercase;margin:0;
+}
+.phint{font-size:13px;color:var(--muted);margin:-8px 0 14px}
+
+/* ---------- drop zone ---------- */
+.drop{
+  border:1.5px dashed var(--rule);
+  background:#fbfcfc;
+  padding:36px 20px;text-align:center;
+  transition:border-color .15s,background .15s;
+}
+.drop.over{border-color:var(--magenta);background:#fdf4f7}
+.drop p{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.drop .mark{
+  width:34px;height:44px;margin:0 auto;border:1.5px solid var(--faint);
+  position:relative;
+}
+.drop .mark::after{
+  content:"";position:absolute;left:50%;top:34%;translate:-50% -50%;
+  width:15px;height:15px;border-radius:50%;border:1.5px solid var(--faint);
+}
+.drop .mark::before{
+  content:"";position:absolute;left:50%;bottom:0;translate:-50% 0;
+  width:26px;height:11px;border-radius:13px 13px 0 0;border:1.5px solid var(--faint);border-bottom:0;
+}
+
+/* ---------- buttons & controls ---------- */
+.btn{
+  font-family:var(--sans);font-size:14px;font-weight:500;
+  border:1px solid var(--ink);background:var(--paper);color:var(--ink);
+  padding:9px 16px;cursor:pointer;transition:background .12s,color .12s;
+}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn-primary{background:var(--magenta);border-color:var(--magenta);color:#fff}
+.btn-primary:hover{background:#a3164e;border-color:#a3164e;color:#fff}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn:disabled:hover{background:var(--paper);color:var(--ink)}
+.btn-primary:disabled:hover{background:var(--magenta);color:#fff}
+.btn:focus-visible,select:focus-visible,input:focus-visible,.seg button:focus-visible,.handle:focus-visible{
+  outline:2px solid var(--cyan);outline-offset:2px;
+}
+
+.field{margin-bottom:14px}
+.flabel{
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;
+}
+.flabel .val{font-size:13px;letter-spacing:0;color:var(--ink);font-weight:600;text-transform:none}
+select{
+  width:100%;font-family:var(--sans);font-size:14px;padding:9px 10px;
+  border:1px solid var(--rule);background:var(--paper);color:var(--ink);
+}
+input[type=range]{width:100%;accent-color:var(--magenta);height:22px}
+.seg{display:flex;border:1px solid var(--rule)}
+.seg button{
+  flex:1;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--paper);border:0;border-right:1px solid var(--rule);
+  padding:8px 4px;cursor:pointer;color:var(--muted);
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;cursor:pointer}
+.check input{margin:3px 0 0;accent-color:var(--magenta);flex:none}
+
+.customsize{display:none;gap:10px}
+.customsize.on{display:flex}
+.customsize label{flex:1}
+.customsize input[type=number]{
+  width:100%;font-family:var(--mono);font-size:14px;padding:8px;
+  border:1px solid var(--rule);background:var(--paper);color:var(--ink);
+}
+
+/* ---------- measuring stage ---------- */
+.stage{position:relative;margin:0 auto;background:#eef0ef;touch-action:none;user-select:none;-webkit-user-select:none}
+.stage img{display:block;width:100%;height:100%;object-fit:fill}
+.handle{position:absolute;cursor:ns-resize}
+.handle.vert{cursor:ew-resize}
+.hline{
+  position:absolute;left:0;right:0;top:0;height:0;
+  border-top:1.5px solid var(--cyan);
+  box-shadow:0 1px 0 rgba(255,255,255,.75),0 -1px 0 rgba(255,255,255,.75);
+}
+.handle.h{left:0;right:0;height:26px;margin-top:-13px}
+.handle.h .hline{top:13px}
+.handle.v{top:0;bottom:0;width:26px;margin-left:-13px}
+.vline{
+  position:absolute;top:0;bottom:0;left:13px;width:0;
+  border-left:1.5px dashed var(--cyan);
+  box-shadow:1px 0 0 rgba(255,255,255,.75),-1px 0 0 rgba(255,255,255,.75);
+}
+.tag{
+  position:absolute;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;
+  background:var(--cyan);color:#fff;padding:2px 5px;white-space:nowrap;
+}
+.handle.h .tag{left:6px;top:1px}
+.handle.h.below .tag{top:auto;bottom:1px}
+.handle.v .tag{top:6px;left:15px}
+.grip{
+  position:absolute;right:6px;top:7px;width:12px;height:12px;
+  background:#fff;border:1.5px solid var(--cyan);
+}
+.handle.v .grip{right:auto;left:7px;top:auto;bottom:7px}
+
+/* caliper bracket between crown & chin */
+.caliper{position:absolute;left:0;width:34px;pointer-events:none}
+.caliper .bar{
+  position:absolute;left:16px;top:0;bottom:0;
+  border-left:2px solid var(--magenta);
+}
+.caliper .cap{position:absolute;left:8px;width:18px;height:0;border-top:2px solid var(--magenta)}
+.caliper .cap.t{top:0}.caliper .cap.b{bottom:0}
+.caliper .amt{
+  position:absolute;left:24px;top:50%;translate:0 -50%;
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  background:var(--magenta);color:#fff;padding:2px 5px;white-space:nowrap;
+}
+
+/* ---------- photo preview + ruler ---------- */
+.previewrow{display:flex;gap:0;align-items:flex-start;justify-content:center;padding:6px 0 2px}
+.ruler{flex:none}
+.photobox{position:relative;border:1px solid var(--rule);background:#fff;flex:none;
+  cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.photobox:active{cursor:grabbing}
+.photobox canvas{display:block;width:100%;height:100%}
+.draghint{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);text-align:center;margin:8px 0 0;
+}
+.swatches{display:flex;gap:8px}
+.swatches button{
+  flex:1;height:36px;border:1px solid var(--rule);cursor:pointer;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;
+}
+.swatches button[aria-pressed=true]{outline:2px solid var(--magenta);outline-offset:-2px;color:var(--ink);font-weight:600}
+.beta{
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;
+  background:var(--amber);color:#fff;padding:2px 5px;margin-left:9px;vertical-align:2px;
+}
+.sub{padding-left:14px;border-left:2px solid var(--rule-soft);margin-top:14px}
+.zone{position:absolute;left:0;right:0;pointer-events:none}
+.zone.eye{background:rgba(0,137,168,.16);border-top:1px solid rgba(0,137,168,.55);border-bottom:1px solid rgba(0,137,168,.55)}
+.zone.headline{border-top:1px dashed rgba(195,27,94,.8)}
+.zonetag{
+  position:absolute;right:3px;font-family:var(--mono);font-size:9px;font-weight:600;
+  letter-spacing:.06em;background:var(--cyan);color:#fff;padding:1px 4px;
+}
+
+/* ---------- readouts ---------- */
+.readouts{border-top:1px solid var(--rule-soft);margin-top:14px;padding-top:12px}
+.ro{
+  display:flex;align-items:baseline;gap:10px;
+  font-family:var(--mono);font-size:12px;padding:5px 0;
+  border-bottom:1px dotted var(--rule-soft);
+}
+.ro:last-child{border-bottom:0}
+.ro .k{color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-size:10.5px;flex:none;width:112px}
+.ro .v{font-weight:600;font-variant-numeric:tabular-nums}
+.ro .n{margin-left:auto;text-align:right;font-size:11px;letter-spacing:.02em}
+.ok{color:var(--cyan)}
+.warn{color:var(--amber)}
+.dot{display:inline-block;width:6px;height:6px;margin-right:5px;vertical-align:middle}
+.dot.ok{background:var(--cyan)}
+.dot.warn{background:var(--amber)}
+
+/* ---------- sheet ---------- */
+.sheetwrap{border:1px solid var(--rule);background:#f4f5f5;padding:10px}
+.shruler{display:block}
+.shruler.h{margin:0 0 4px 22px}
+.shruler.v{margin-right:4px;flex:none}
+.sheetwrap canvas{display:block;width:100%;height:auto;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.countline{
+  display:flex;align-items:baseline;gap:8px;margin:12px 0 0;
+  font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);
+}
+.countline b{
+  font-family:var(--cond);font-size:34px;font-weight:700;letter-spacing:-.02em;
+  color:var(--ink);line-height:.9;text-transform:none;
+}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+
+.note{
+  font-size:12.5px;color:var(--muted);line-height:1.55;
+  border-left:2px solid var(--rule);padding-left:11px;margin:14px 0 0;
+}
+.note strong{color:var(--ink);font-weight:600}
+.alert{
+  font-size:13px;background:#fdf6e6;border:1px solid #e6cf9a;color:#6b4a00;
+  padding:10px 12px;margin-top:12px;display:none;
+}
+.alert.on{display:block}
+.empty{color:var(--faint);font-size:13.5px;text-align:center;padding:34px 10px}
+.hide{display:none !important}
+
+footer{
+  margin-top:28px;padding-top:14px;border-top:1px solid var(--rule);
+  font-size:12px;color:var(--muted);line-height:1.6;
+}
+
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Print layout · 4 × 6 in · 300 dpi</div>
+      <h1>Passport photos, one 4×6 sheet</h1>
+    </div>
+    <p class="lede">Mark the top of the head and the chin. Everything else — crop, head height, tiling — is calculated from those two lines.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tabBtnPrint" aria-selected="true" aria-controls="tabPrint" data-tab="Print">Photos &amp; print sheet</button>
+    <button role="tab" id="tabBtnDoc" aria-selected="false" aria-controls="tabDoc" data-tab="Doc">Passport page</button>
+    <button role="tab" id="tabBtnExp" aria-selected="false" aria-controls="tabExp" data-tab="Exp">Experimental · AI background</button>
+  </nav>
+
+  <div id="tabPrint" role="tabpanel" aria-labelledby="tabBtnPrint">
+  <div class="grid">
+
+    <!-- OUTPUT COLUMN (left) -->
+    <div>
+      <section class="panel" id="resultPanel">
+        <div class="phead"><span class="pnum">5</span><h2 class="ptitle">One photo</h2></div>
+        <div class="empty" id="resultEmpty">Add a photo to see the cropped result at actual size.</div>
+
+        <div id="resultBody" class="hide">
+          <div class="previewrow">
+            <svg class="ruler" id="ruler" aria-hidden="true"></svg>
+            <div class="photobox" id="photobox" tabindex="0" role="application"
+                 aria-label="Cropped photo. Drag it or use the arrow keys to reposition.">
+              <canvas id="photoCanvas"></canvas>
+              <div class="zone eye hide" id="eyeZone"><span class="zonetag" style="top:-1px">Eyes here</span></div>
+            </div>
+          </div>
+          <p class="draghint">Drag the photo to reposition · arrow keys nudge</p>
+          <div class="readouts" id="readouts"></div>
+        </div>
+      </section>
+
+      <section class="panel hide" id="sheetPanel">
+        <div class="phead"><span class="pnum">6</span><h2 class="ptitle">The 4×6 sheet</h2></div>
+        <p class="phint">Only needed if you want physical prints. For a digital-only application, skip to the panel below.</p>
+        <div class="sheetwrap">
+          <svg class="shruler h" id="sheetRulerH" aria-hidden="true"></svg>
+          <div style="display:flex;align-items:flex-start">
+            <svg class="shruler v" id="sheetRulerV" aria-hidden="true"></svg>
+            <div style="flex:1;min-width:0"><canvas id="sheetCanvas"></canvas></div>
+          </div>
+        </div>
+        <p class="countline"><b id="count">0</b> <span id="countUnit">photos per sheet</span></p>
+        <div class="actions">
+          <button class="btn btn-primary" id="dlSheet" type="button">Download the 4×6 sheet</button>
+          <button class="btn" id="dlOne" type="button">Download one photo</button>
+        </div>
+        <p class="note" id="printNote"></p>
+      </section>
+      <section class="panel hide" id="digitalPanel">
+        <div class="phead"><span class="pnum">7</span><h2 class="ptitle">Digital upload</h2></div>
+        <p class="phint">Skip the sheet and export the single photo, resized and compressed to fit a portal's limits. Nothing here affects the print sheet above.</p>
+
+        <div class="field">
+          <div class="flabel"><span>Where you're uploading it</span></div>
+          <select id="portal"></select>
+        </div>
+
+        <div class="field">
+          <div class="flabel"><span>Format</span></div>
+          <div class="seg" id="fmt">
+            <button type="button" data-v="jpeg" aria-pressed="true">JPEG</button>
+            <button type="button" data-v="png" aria-pressed="false">PNG</button>
+          </div>
+        </div>
+
+        <div class="field" id="pxField">
+          <div class="flabel"><span>Pixel size</span><span class="val" id="pxVal">600 × 600</span></div>
+          <input type="range" id="px" min="240" max="1200" step="10" value="600">
+          <p class="draghint" style="text-align:left;margin-top:7px" id="pxRange"></p>
+        </div>
+
+        <div class="field" id="capField">
+          <div class="flabel"><span>Keep the file under</span><span class="val" id="capVal">240 KB</span></div>
+          <input type="range" id="cap" min="20" max="2000" step="10" value="240">
+        </div>
+
+        <div class="readouts" id="digitalOut"></div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="dlDigital" type="button">Download for upload</button>
+        </div>
+        <p class="note" id="digitalNote"></p>
+      </section>
+    </div>
+    <!-- SETTINGS COLUMN (right) -->
+    <div>
+      <section class="panel">
+        <div class="phead"><span class="pnum">1</span><h2 class="ptitle">Add the photo</h2></div>
+
+        <div class="drop" id="drop">
+          <div class="mark"></div>
+          <p>Drop a photo here, or</p>
+          <p style="margin-top:12px"><button class="btn" id="pick" type="button">Choose a file</button></p>
+          <p style="margin-top:12px">JPEG, PNG or a PDF scan. Face the camera, plain light background, shoulders in frame.</p>
+        </div>
+        <input type="file" id="file" accept="image/*,application/pdf,.pdf" hidden>
+        <div class="alert" id="loadErr"></div>
+      </section>
+
+      <section class="panel hide" id="measurePanel">
+        <div class="phead"><span class="pnum">2</span><h2 class="ptitle">Mark head and chin</h2></div>
+        <p class="phint">Drag the cyan lines to the very top of the hair and the bottom of the chin. Drag the dashed line to the centre of the face. Arrow keys nudge a focused line.</p>
+        <div class="stage" id="stage">
+          <img id="srcImg" alt="Your uploaded photo, with draggable measurement lines">
+          <div class="caliper" id="caliper">
+            <div class="cap t"></div><div class="bar"></div><div class="cap b"></div>
+            <div class="amt" id="caliperAmt">head</div>
+          </div>
+          <div class="handle h" id="hCrown" tabindex="0" role="slider" aria-label="Top of head" aria-valuemin="0" aria-valuemax="100" aria-valuenow="15">
+            <div class="hline"></div><span class="tag">Top of head</span><span class="grip"></span>
+          </div>
+          <div class="handle h below" id="hChin" tabindex="0" role="slider" aria-label="Bottom of chin" aria-valuemin="0" aria-valuemax="100" aria-valuenow="55">
+            <div class="hline"></div><span class="tag">Chin</span><span class="grip"></span>
+          </div>
+          <div class="handle v" id="hCentre" tabindex="0" role="slider" aria-label="Centre of face" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+            <div class="vline"></div><span class="tag">Centre</span><span class="grip"></span>
+          </div>
+        </div>
+        <p style="margin:14px 0 0"><button class="btn" id="replace" type="button">Use a different photo</button></p>
+      </section>
+
+      <section class="panel hide" id="specPanel">
+        <div class="phead"><span class="pnum">3</span><h2 class="ptitle">Document</h2></div>
+
+        <div class="field">
+          <div class="flabel"><span>Photo standard</span></div>
+          <select id="spec"></select>
+        </div>
+
+        <div class="field customsize" id="customSize">
+          <label><span class="flabel"><span>Width mm</span></span><input type="number" id="cw" value="35" min="20" max="101" step="0.5"></label>
+          <label><span class="flabel"><span>Height mm</span></span><input type="number" id="ch" value="45" min="20" max="152" step="0.5"></label>
+          <label><span class="flabel"><span>Head mm</span></span><input type="number" id="chd" value="34" min="10" max="140" step="0.5"></label>
+        </div>
+
+        <div class="field">
+          <div class="flabel"><span>Head height, chin to crown</span><span class="val" id="headVal">—</span></div>
+          <input type="range" id="head" min="0" max="100" value="50">
+          <div class="ro" style="border:0;padding:2px 0 0"><span class="n" id="headRange" style="margin-left:0;color:var(--muted)"></span></div>
+        </div>
+
+        <div class="field">
+          <div class="flabel"><span>Move face up / down</span><span class="val" id="nudgeVal">0.0 mm</span></div>
+          <input type="range" id="nudge" min="-120" max="120" value="0">
+        </div>
+
+        <div class="field">
+          <div class="flabel"><span>Move face left / right</span><span class="val" id="shiftVal">0.0 mm</span></div>
+          <input type="range" id="shift" min="-120" max="120" value="0">
+          <p style="margin:9px 0 0"><button class="btn" id="recentre" type="button" style="font-size:12px;padding:6px 12px">Re-centre</button></p>
+        </div>
+
+        <div class="field">
+          <div class="flabel"><span>Cut guides</span></div>
+          <div class="seg" id="guides">
+            <button type="button" data-v="line" aria-pressed="true">Hairline</button>
+            <button type="button" data-v="marks" aria-pressed="false">Corner marks</button>
+          </div>
+        </div>
+
+        <label class="check"><input type="checkbox" id="safe">
+          <span>Keep a 3 mm border around the sheet. Safer if the lab trims the edges, but usually fits fewer photos.</span></label>
+      </section>
+
+      <section class="panel hide" id="bgPanel">
+        <div class="phead"><span class="pnum">4</span><h2 class="ptitle">Background<span class="beta">Experimental</span></h2></div>
+        <p class="phint">Floods inwards from the edges of the frame and replaces everything that matches the wall colour. Good on an evenly lit plain wall. Poor on a busy room, or where hair sits close in tone to what's behind it.</p>
+
+        <label class="check"><input type="checkbox" id="bgOn">
+          <span>Replace the background</span></label>
+
+        <div class="sub hide" id="bgOpts">
+          <div class="field">
+            <div class="flabel"><span>Replace with</span></div>
+            <div class="swatches" id="bgSwatch">
+              <button type="button" data-c="#ffffff" style="background:#ffffff" aria-pressed="true">White</button>
+              <button type="button" data-c="#ededed" style="background:#ededed" aria-pressed="false">Light grey</button>
+              <button type="button" data-c="#f4efe4" style="background:#f4efe4" aria-pressed="false">Cream</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="flabel"><span>How much it removes</span><span class="val" id="tolVal">40</span></div>
+            <input type="range" id="tol" min="8" max="110" value="40">
+            <p class="draghint" style="text-align:left;margin-top:7px">Too low leaves patches of wall. Too high eats into hair and shoulders.</p>
+          </div>
+
+          <div class="field">
+            <div class="flabel"><span>Edge softness</span><span class="val" id="softVal">2 px</span></div>
+            <input type="range" id="soft" min="0" max="5" value="2">
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+  </div><!-- /tabPrint -->
+
+
+  <div id="tabDoc" role="tabpanel" aria-labelledby="tabBtnDoc" hidden>
+      <!-- passport page -->
+      <div>
+        <section class="panel">
+          <div class="phead"><span class="pnum">P</span><h2 class="ptitle">Passport page</h2></div>
+          <p class="phint">PNG or JPG · up to 1 MB. This is the scan of your bio page, so nothing is cropped to a face and no background is touched. Crop tight and keep it landscape — that is what makes the text survive.</p>
+
+          <div class="drop" id="docDrop">
+            <div class="mark" style="width:46px;height:32px"></div>
+            <p>Drop your passport page here, or</p>
+            <p style="margin-top:12px"><button class="btn" id="docPick" type="button">Choose a file</button></p>
+            <p style="margin-top:12px">JPG, PNG or a PDF scan — the photo inside a PDF is pulled out at full quality.</p>
+          </div>
+          <input type="file" id="docFile" accept="image/*,application/pdf,.pdf" hidden>
+          <div class="alert" id="docErr"></div>
+
+          <div id="docBody" class="hide">
+            <div class="doccols">
+            <div class="docout">
+            <p class="inspectlab">Output, actual pixels</p>
+            <div class="docprev"><img id="docPrev" alt="The resized passport page"></div>
+
+            <p class="inspectlab">Machine-readable strip — can you read it?</p>
+            <div class="ziprow">
+              <div class="seg" id="docZoomX">
+                <button type="button" data-v="fit" aria-pressed="true">Fit</button>
+                <button type="button" data-v="1" aria-pressed="false">1×</button>
+                <button type="button" data-v="2" aria-pressed="false">2×</button>
+              </div>
+              <div class="field">
+                <div class="flabel"><span>Strip height</span><span class="val" id="docStripVal">12%</span></div>
+                <input type="range" id="docStrip" min="12" max="45" value="12">
+              </div>
+            </div>
+            <div class="inspect"><canvas id="docZoom"></canvas></div>
+            <p class="draghint" style="text-align:left;margin-top:6px">1× and 2× show output pixels exactly — drag the strip sideways when it runs past the box. Fit scales the whole zone into view. If the top MRZ line is missing, raise the strip height.</p>
+
+            <div class="readouts" id="docOut"></div>
+            <div class="actions"><button class="btn btn-primary" id="docDl" type="button">Download passport page</button></div>
+            <p class="note" id="docNote"></p>
+            </div>
+            <div>
+            <p class="inspectlab">Crop to the bio page</p>
+            <div class="cropstage" id="cropStage">
+              <img id="cropImg" alt="Your passport page">
+              <div class="shade" id="shTop"></div><div class="shade" id="shBot"></div>
+              <div class="shade" id="shLeft"></div><div class="shade" id="shRight"></div>
+              <div class="croprect" id="cropRect">
+                <span class="ch nw" data-h="nw"></span><span class="ch ne" data-h="ne"></span>
+                <span class="ch sw" data-h="sw"></span><span class="ch se" data-h="se"></span>
+              </div>
+            </div>
+            <p class="draghint" style="text-align:left;margin-top:8px">Drag the corners in to the edges of the printed page. Every pixel of desk or fingers you cut out gets spent on the text instead.</p>
+
+            <div class="rotrow" style="margin-top:12px">
+              <button class="btn" id="docRotL" type="button">↺ Left</button>
+              <button class="btn" id="docRotR" type="button">↻ Right</button>
+              <button class="btn" id="docReset" type="button">Reset crop</button>
+              <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="docRotVal">0°</span>
+            </div>
+
+            <div class="field" style="margin-top:16px">
+              <div class="flabel"><span>Portal preset</span></div>
+              <select id="docPreset">
+                <option value="800x400">800 × 400 — landscape (recommended)</option>
+                <option value="400x800">400 × 800 — portrait, as literally written</option>
+                <option value="400x400">400 × 400 — satisfies either reading</option>
+                <option value="1600x1600">1600 × 1600 — other portals</option>
+                <option value="custom" selected>Custom — set the width yourself</option>
+                <option value="orig">Keep the original size</option>
+              </select>
+              <p class="draghint" style="text-align:left;margin-top:7px">Sets a starting point for the slider below and marks the recommended box in the readout — the slider has the final say on size.</p>
+            </div>
+
+            <div class="field" id="customField">
+              <div class="flabel"><span>Custom size</span><span class="val">width × height cap, px</span></div>
+              <div style="display:flex;gap:10px">
+                <input type="number" class="numin" id="docCustomW" min="200" max="6000" step="10" value="1584" aria-label="Width in pixels" style="flex:1">
+                <input type="number" class="numin" id="docCustomH" min="0" max="6000" step="10" value="0" aria-label="Height cap in pixels, zero follows the crop" style="flex:1">
+              </div>
+              <p class="draghint" style="text-align:left;margin-top:7px">Height 0 lets the height follow the crop. A height cap shrinks the whole page to fit under it — the page keeps its shape, nothing stretches.</p>
+            </div>
+
+            <div class="field" id="resField">
+              <div class="flabel"><span>Resolution — text clarity</span><span class="val" id="docResVal">36 px/char · 1584 px wide</span></div>
+              <input type="range" id="docRes" min="8" max="36" value="36">
+              <p class="draghint" style="text-align:left;margin-top:7px">The machine-readable strip is 44 characters across, so width buys clarity directly. 12+ px per character reads cleanly. The file-size cap below still has the last word, and it never upscales past what your crop actually contains.</p>
+            </div>
+
+            <div class="field">
+              <div class="flabel"><span>Encoding</span></div>
+              <div class="seg" id="docFmt">
+                <button type="button" data-v="png8" aria-pressed="false">PNG 8-bit</button>
+                <button type="button" data-v="png24" aria-pressed="false">PNG 24-bit</button>
+                <button type="button" data-v="jpeg" aria-pressed="true">JPG</button>
+              </div>
+              <p class="draghint" style="text-align:left;margin-top:7px">8-bit PNG is still a real PNG and still lossless per pixel — it just stores a palette instead of 16 million colours. Usually a third the size of plain PNG with no visible change to text.</p>
+            </div>
+
+            <div class="field" id="colorField" style="display:none">
+              <div class="flabel"><span>Palette</span><span class="val" id="docColVal">128 colours</span></div>
+              <input type="range" id="docColors" min="16" max="256" step="8" value="128">
+            </div>
+
+            <div class="field">
+              <div class="flabel"><span>Clean up the paper</span><span class="val" id="docCleanVal">0%</span></div>
+              <input type="range" id="docClean" min="0" max="100" value="0">
+              <p class="draghint" style="text-align:left;margin-top:7px">Pushes the paper towards white and the ink towards black. Removes the camera speckle that bloats the file, and raises text contrast. Too much will flatten out the security printing.</p>
+            </div>
+
+            <label class="check" style="margin-bottom:14px"><input type="checkbox" id="docGray">
+              <span>Convert to greyscale. Smaller again, but the portrait and any coloured stamps lose their colour — only do this if a colour scan is not required.</span></label>
+
+            <div class="field">
+              <div class="flabel"><span>Sharpen</span><span class="val" id="docSharpVal">0%</span></div>
+              <input type="range" id="docSharp" min="0" max="100" value="0">
+              <p class="draghint" style="text-align:left;margin-top:7px">Restores edge definition lost in shrinking. Too much creates halos that look edited.</p>
+            </div>
+
+            <div class="field">
+              <div class="flabel"><span>Keep the file under</span><span class="val" id="docCapVal">1.0 MB</span></div>
+              <input type="range" id="docCap" min="50" max="2000" step="10" value="1000">
+            </div>
+
+            </div>
+            </div>
+          </div>
+        </section>
+      </div>
+  </div><!-- /tabDoc -->
+
+  <div id="tabExp" role="tabpanel" aria-labelledby="tabBtnExp" hidden>
+    <section class="panel">
+      <div class="phead"><span class="pnum">E</span><h2 class="ptitle">AI background removal<span class="beta">Experimental</span></h2></div>
+      <p class="phint">Adobe Express does this by uploading your photo to Adobe's servers and running a segmentation model there. This runs the same kind of model — Google's MediaPipe selfie segmenter, Apache-2.0 licensed — entirely on your machine. The photo never leaves the browser; only the engine itself downloads once from a CDN.</p>
+
+      <div class="aipill" id="aiStatus">Engine not loaded yet.</div>
+
+      <div id="expNeeds">
+        <div class="empty" style="padding:26px 10px">Load a photo on the first tab, then come back here to compare.</div>
+        <p style="text-align:center"><button class="btn" id="expGoLoad" type="button">Go and add a photo</button></p>
+      </div>
+
+      <div id="expBody" class="hide">
+        <div class="grid" style="margin-top:18px">
+          <div>
+            <p class="inspectlab" style="margin-top:0">Same crop, three ways</p>
+            <div class="cmprow">
+              <div class="cmpcol"><div class="cmpbox"><canvas id="cmpClassic"></canvas></div><p class="cmplab">Classic · colour flood</p></div>
+              <div class="cmpcol"><div class="cmpbox"><canvas id="cmpAI"></canvas></div><p class="cmplab">AI · segmentation</p></div>
+              <div class="cmpcol"><div class="cmpbox"><canvas id="cmpDiff"></canvas></div><p class="cmplab">Where they disagree</p></div>
+            </div>
+            <div class="readouts" id="aiOut"></div>
+          </div>
+          <div>
+            <div class="field">
+              <div class="flabel"><span>Edge threshold</span><span class="val" id="aiThrVal">50</span></div>
+              <input type="range" id="aiThr" min="15" max="85" value="50">
+              <p class="draghint" style="text-align:left;margin-top:6px">Lower keeps more of the person. Higher trims harder into uncertain edges.</p>
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Feather</span><span class="val" id="aiFeatherVal">2 px</span></div>
+              <input type="range" id="aiFeather" min="0" max="6" value="2">
+            </div>
+            <label class="check"><input type="checkbox" id="aiRefine" checked>
+              <span>Edge-aware refinement (guided filter) — snaps the mask onto real edges like hair against the wall.</span></label>
+            <div class="field" style="margin-top:14px">
+              <div class="flabel"><span>Replace with</span></div>
+              <div class="swatches" id="expSwatch">
+                <button type="button" data-c="#ffffff" style="background:#ffffff" aria-pressed="true">White</button>
+                <button type="button" data-c="#ededed" style="background:#ededed" aria-pressed="false">Light grey</button>
+                <button type="button" data-c="#f4efe4" style="background:#f4efe4" aria-pressed="false">Cream</button>
+              </div>
+            </div>
+            <label class="check" style="margin-top:4px"><input type="checkbox" id="aiUse">
+              <span><strong>Use the AI background everywhere</strong> — the main preview, the 4×6 sheet, and every download switch to this result.</span></label>
+            <p style="margin:14px 0 0"><button class="btn" id="aiRerun" type="button">Analyse again</button></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub" style="margin-top:18px">
+        <p class="inspectlab" style="margin-top:0">Offline setup — optional</p>
+        <p style="font-size:12.5px;color:var(--muted);margin:6px 0 0">The first run needs the internet to fetch the engine (~10 MB) and model (~450 KB). To make it work with no connection at all, save these four files once, then load them here:</p>
+        <ul class="dllist">
+          <li><a href="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs" download>vision_bundle.mjs</a></li>
+          <li><a href="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm/vision_wasm_internal.js" download>vision_wasm_internal.js</a></li>
+          <li><a href="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm/vision_wasm_internal.wasm" download>vision_wasm_internal.wasm</a></li>
+          <li><a href="https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite" download>selfie_segmenter.tflite</a></li>
+        </ul>
+        <p style="margin:10px 0 0"><button class="btn" id="aiFilesPick" type="button" style="font-size:12px;padding:6px 12px">Load the four files</button></p>
+        <input type="file" id="aiFiles" multiple hidden>
+      </div>
+    </section>
+  </div><!-- /tabExp -->
+
+  <footer>
+    Head-height figures follow the published requirements for each document, but authorities do change them — check the current rules with the issuing office before you pay for prints. This tool crops and lays out; it does not judge background colour, lighting, expression, or glasses, which cause just as many rejections.
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var DPI = 300;
+var MM = DPI / 25.4;                 // px per mm
+var mm = function(v){ return v * MM; };
+var SHEET_W = 6 * DPI;               // 1800 px — 6 in wide
+var SHEET_H = 4 * DPI;               // 1200 px — 4 in tall
+
+var SPECS = [
+  /* countries alphabetical by label; Custom stays last */
+  { id:'br', label:'Brazil — 5 × 7 cm (50 × 70 mm)',
+    w:50, h:70, headMin:49, headMax:56, headDef:52.5, topFrac:0.30,
+    note:'Head 49–56 mm chin to crown — the ICAO 70–80% framing Brazil\'s consulates point to; the Polícia Federal itself publishes no head measurement. Plain white background — blue is explicitly rejected. Inside Brazil the photo is captured live at the desk, so a printed 5 × 7 matters mostly for consular applications abroad and children under 5.' },
+  { id:'ca', label:'Canada — 50 × 70 mm',
+    w:50, h:70, headMin:31, headMax:36, headDef:33.5, topFrac:0.30,
+    note:'Head 31–36 mm chin to crown, on a 50 × 70 mm photo.' },
+  { id:'cn', label:'China — 33 × 48 mm',
+    w:33, h:48, headMin:28, headMax:33, headDef:30.5, topFrac:0.23,
+    note:'Head 28–33 mm chin to crown, with 3–5 mm of space above the hair. White background with no border or frame. The same photo serves passport and visa applications.' },
+  { id:'in', label:'India — 2 × 2 in (51 × 51 mm)',
+    w:50.8, h:50.8, headMin:25, headMax:35, headDef:33, topFrac:0.23,
+    note:'Head 25–35 mm chin to crown, on the same 2 × 2 frame as a US photo. The MEA spec asks for a plain light background — plain white is the safe choice at a consulate, and the online portal\'s own note prefers light-coloured over pure white.' },
+  { id:'eu', label:'Ireland / EU / Schengen — 35 × 45 mm',
+    w:35, h:45, headMin:31.5, headMax:36, headDef:34, topFrac:0.28,
+    note:'Face from chin to crown must fill 70–80% of the height, i.e. 31.5–36 mm. Ireland accepts white, light grey or cream backgrounds.' },
+  { id:'sa', label:'Saudi eVisa — square, face 70–80%',
+    w:50.8, h:50.8, headMin:35.6, headMax:40.6, headDef:38, topFrac:0.20,
+    note:'The Saudi portal wants the face to fill 70–80% of the frame — 1.4 to 1.6 inches chin to crown. That is a noticeably larger head than a US 2×2 photo, so a photo made for a US passport will not pass here. Background must be plain white with no pattern.' },
+  { id:'uk', label:'United Kingdom — 35 × 45 mm',
+    w:35, h:45, headMin:29, headMax:34, headDef:32, topFrac:0.27,
+    note:'Head 29–34 mm chin to crown. Plain light grey or cream background — not pure white.' },
+  { id:'us', label:'United States — 2 × 2 in (51 × 51 mm)',
+    w:50.8, h:50.8, headMin:25, headMax:35, headDef:33, topFrac:0.23,
+    eyeMin:29, eyeMax:35,
+    note:'Head 25–35 mm chin to crown (50–69% of the height). Eyes 29–35 mm up from the bottom edge. Plain white or off-white background.' },
+  { id:'custom', label:'Custom size', w:35, h:45, headMin:10, headMax:140, headDef:34, topFrac:0.28,
+    note:'Enter the exact photo size and head height your document requires.' }
+];
+
+var PORTALS = [
+  /* countries alphabetical by label; the catch-all stays last */
+  { id:'ie', label:'Ireland — Passport Online upload', square:false,
+    pxMin:715, pxMax:1600, pxDef:740, pxMinH:951, capKb:9000, kbMin:0, fmt:'jpeg', lockFmt:true,
+    note:'JPEG at least 715 × 951 px, no larger than 9 MB. A scan of a printed photo is not accepted — this must come from the original digital file.' },
+  { id:'nusuk', label:'Nusuk — Hajj personal photo', square:true, maxOnly:true,
+    pxMin:120, pxMax:200, pxDef:200, capKb:1000, kbMin:0, fmt:'png', lockFmt:false,
+    note:'PNG or JPG, at most 200 × 200 px, up to 1 MB. That budget is enormous at this size, so PNG is seeded as the format — lossless, and still only about 8% of the limit. White background, formal attire, only you in the frame; the framing from the photo panels carries over, since Nusuk publishes no head-size rule. The known rejection “attachment does not match entered data” is a form-field mismatch, not an image problem.' },
+  { id:'sa', label:'Saudi eVisa — visa.visitsaudi.com', square:true,
+    pxMin:200, pxMax:200, pxDef:200, capKb:100, kbMin:5, fmt:'jpeg', lockFmt:false,
+    note:'Exactly 200 × 200 px, and the file must be between 5 KB and 100 KB. The floor matters as much as the ceiling here — a 200 × 200 image compressed hard can easily fall under 5 KB and be rejected for being too small. Background plain white, no pattern, only you in the frame, taken within the last six months.' },
+  { id:'uspass', label:'US passport — online renewal upload', square:true,
+    pxMin:600, pxMax:1200, pxDef:900, capKb:10000, kbMin:54, fmt:'jpeg', lockFmt:false,
+    note:'Square image, 600–1200 px. The file must be at least 54 KB and no more than 10 MB, so compressing too hard can fail the lower bound.' },
+  { id:'ds160', label:'US visa — DS-160 / CEAC upload', square:true,
+    pxMin:600, pxMax:1200, pxDef:600, capKb:240, kbMin:0, fmt:'jpeg', lockFmt:true,
+    note:'Square JPEG, 600–1200 px, under 240 KB. CEAC rejects oversized files without saying why, so this is the cap that matters. It also wants sRGB — iPhone photos are often Display P3, which this export converts on the way out.' },
+  { id:'generic', label:'Something else — set it yourself', square:false,
+    pxMin:200, pxMax:2000, pxDef:600, capKb:500, kbMin:0, fmt:'jpeg', lockFmt:false,
+    note:'Check the portal\'s own stated limits and match them here.' }
+];
+
+var S = {
+  img:null, iw:0, ih:0,
+  crownF:0.14, chinF:0.56, centreF:0.5,
+  spec:SPECS[0], headMm:33,
+  nudgeMm:0, shiftMm:0,                     // free positioning, in mm of the final photo
+  bgOn:false, bgColor:'#ffffff', bgTol:40, bgSoft:2, bgFilled:0,
+  guides:'line', safe:false, bgMode:'classic',
+  portal:PORTALS[0], px:600, capKb:240, fmt:'jpeg',
+  layout:null, scale:1, pdfNote:null
+};
+var PAN = 14;                               // how far the photo may be moved, mm either way
+
+var $ = function(id){ return document.getElementById(id); };
+var els = {};
+['drop','pick','file','loadErr','measurePanel','stage','srcImg','caliper','caliperAmt',
+ 'hCrown','hChin','hCentre','replace','specPanel','spec','customSize','cw','ch','chd',
+ 'head','headVal','headRange','nudge','nudgeVal','guides','safe','resultEmpty','resultBody',
+ 'ruler','photobox','photoCanvas','eyeZone','readouts','sheetPanel','sheetCanvas','sheetRulerH','sheetRulerV','count',
+ 'countUnit','dlSheet','dlOne','printNote',
+ 'shift','shiftVal','recentre','bgPanel','bgOn','bgOpts','bgSwatch','tol','tolVal','soft','softVal',
+ 'digitalPanel','portal','fmt','pxField','px','pxVal','pxRange','capField','cap','capVal',
+ 'digitalOut','dlDigital','digitalNote',
+ 'tabBtnPrint','tabPrint',
+ 'docDrop','docPick','docFile','docErr','docBody','docPrev','docRotL','docRotR','docRotVal',
+ 'docPreset','docFmt','docCap','docCapVal','docOut','docDl','docNote',
+ 'cropStage','cropImg','shTop','shBot','shLeft','shRight','cropRect',
+ 'docReset','docSharp','docSharpVal','docZoom',
+ 'colorField','docColors','docColVal','docClean','docCleanVal','docGray',
+ 'tabBtnExp','tabExp','expGoLoad','expNeeds','expBody','aiStatus','cmpClassic','cmpAI','cmpDiff',
+ 'aiThr','aiThrVal','aiFeather','aiFeatherVal','aiRefine','aiUse','expSwatch','aiRerun',
+ 'aiOut','aiFiles','aiFilesPick',
+ 'resField','docRes','docResVal','docStrip','docStripVal','docZoomX',
+ 'tabBtnDoc','tabDoc','customField','docCustomW','docCustomH'
+].forEach(function(k){ els[k] = $(k); });
+
+var oneCanvas = document.createElement('canvas');   // full-res single photo, reused for tiling
+
+// background removal is heavy enough that dragging needs to be coalesced to one redraw a frame
+var pending = false;
+function requestRender(){
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(function(){ pending = false; render(); });
+}
+function syncOffsetInputs(){
+  els.nudge.value = Math.round(S.nudgeMm * 10);
+  els.shift.value = Math.round(S.shiftMm * 10);
+}
+
+/* ---------- loading ---------- */
+
+SPECS.forEach(function(s){
+  var o = document.createElement('option');
+  o.value = s.id; o.textContent = s.label;
+  els.spec.appendChild(o);
+});
+
+PORTALS.forEach(function(p){
+  var o = document.createElement('option');
+  o.value = p.id; o.textContent = p.label;
+  els.portal.appendChild(o);
+});
+
+els.pick.addEventListener('click', function(){ els.file.click(); });
+els.replace.addEventListener('click', function(){ els.file.click(); });
+els.file.addEventListener('change', function(e){
+  if (e.target.files && e.target.files[0]) load(e.target.files[0]);
+});
+
+['dragenter','dragover'].forEach(function(t){
+  els.drop.addEventListener(t, function(e){ e.preventDefault(); els.drop.classList.add('over'); });
+});
+['dragleave','drop'].forEach(function(t){
+  els.drop.addEventListener(t, function(e){ e.preventDefault(); els.drop.classList.remove('over'); });
+});
+els.drop.addEventListener('drop', function(e){
+  var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) load(f);
+});
+
+function fail(msg){
+  els.loadErr.textContent = msg;
+  els.loadErr.classList.add('on');
+}
+
+/* ---------- PDF sources ----------
+   A scanned document is usually a PDF wrapping one big JPEG (a DCTDecode
+   stream is verbatim JPEG bytes). Pulling that JPEG out directly needs no
+   network and no re-render — the original scan pixels survive untouched — so
+   it is tried first, entirely offline. Only a PDF with no usable embedded
+   JPEG (vector pages, Flate/CCITT scans) falls back to rendering page 1 with
+   pdf.js from a CDN — same pattern as the AI engine: pinned version, two
+   origins, and the readout names what happened. */
+
+var PDFJS_VERSION = '4.10.38';   // build/pdf.min.mjs + build/pdf.worker.min.mjs verified on both CDNs
+var PDFJS_CDNS = [
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@' + PDFJS_VERSION,
+  'https://unpkg.com/pdfjs-dist@' + PDFJS_VERSION
+];
+var PDFJS = { mod:null, base:'', via:'' };
+
+function looksPdf(file){
+  return file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+}
+
+/* Walk one JPEG's marker structure from an SOI at `start`; returns the byte
+   just past its EOI, or -1 if the structure breaks. Segment lengths are
+   honoured, so an EXIF thumbnail (a whole JPEG inside an APP1 segment, its
+   own EOI included) cannot end the walk early. */
+function jpegEnd(u8, start){
+  var i = start + 2, n = u8.length;
+  while (i + 1 < n){
+    if (u8[i] !== 0xFF) return -1;              // expected a marker here
+    var m = u8[i + 1];
+    if (m === 0xFF){ i++; continue; }           // fill byte before a marker
+    if (m === 0xD8) return -1;                  // a second SOI — not sane
+    if (m === 0xD9) return i + 2;               // EOI — done
+    if (m === 0x01 || (m >= 0xD0 && m <= 0xD7)){ i += 2; continue; }
+    if (i + 3 >= n) return -1;
+    var len = (u8[i + 2] << 8) | u8[i + 3];
+    if (len < 2) return -1;
+    i += 2 + len;                               // past the whole segment
+    if (m === 0xDA){                            // SOS — entropy data follows
+      while (i + 1 < n){
+        if (u8[i] !== 0xFF){ i++; continue; }
+        var k = u8[i + 1];
+        if (k === 0x00 || (k >= 0xD0 && k <= 0xD7)){ i += 2; continue; }
+        if (k === 0xFF){ i++; continue; }
+        break;                                  // real marker — outer loop reads it
+      }
+    }
+  }
+  return -1;
+}
+
+/* Every DCTDecode stream in a PDF is a verbatim JPEG, so scanning the raw
+   bytes for structurally valid JPEGs finds the scans without parsing PDF
+   syntax at all — object streams, cross-reference styles and encryption of
+   the *document* structure do not touch the image bytes. */
+function extractJpegs(u8){
+  var found = [], i = 0, n = u8.length;
+  while (i + 2 < n){
+    if (u8[i] === 0xFF && u8[i + 1] === 0xD8 && u8[i + 2] === 0xFF){
+      var e = jpegEnd(u8, i);
+      if (e > 0){ found.push([i, e]); i = e; continue; }
+    }
+    i++;
+  }
+  return found;
+}
+
+function decodeJpegRange(u8, r){
+  return new Promise(function(res){
+    var url = URL.createObjectURL(new Blob([u8.subarray(r[0], r[1])], { type:'image/jpeg' }));
+    var im = new Image();
+    im.onload = function(){ res({ url:url, im:im, area:im.naturalWidth * im.naturalHeight }); };
+    im.onerror = function(){ URL.revokeObjectURL(url); res(null); };
+    im.src = url;
+  });
+}
+
+/* Rough colourfulness, 0–255. A PDF can carry the photo and its grayscale
+   soft-mask at the same size; when areas tie, the colourful one is the photo. */
+function colourfulness(im){
+  var s = 32, cv = document.createElement('canvas');
+  cv.width = s; cv.height = s;
+  var c = cv.getContext('2d', { willReadFrequently:true });
+  c.drawImage(im, 0, 0, s, s);
+  var d = c.getImageData(0, 0, s, s).data, m = 0;
+  for (var i = 0; i < d.length; i += 4){
+    var v = Math.max(Math.abs(d[i] - d[i+1]), Math.abs(d[i+1] - d[i+2]));
+    if (v > m) m = v;
+  }
+  return m;
+}
+
+function pdfToImage(file, statusEl, ok, bad){
+  file.arrayBuffer().then(function(buf){
+    var u8 = new Uint8Array(buf);
+    if (!(u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46)){
+      bad('That .pdf does not start like a PDF — it may be renamed or corrupt.');
+      return;
+    }
+    var ranges = extractJpegs(u8);
+    Promise.all(ranges.map(function(r){ return decodeJpegRange(u8, r); })).then(function(cands){
+      cands = cands.filter(function(c){
+        if (!c) return false;
+        if (c.im.naturalWidth >= 200 && c.im.naturalHeight >= 200) return true;
+        URL.revokeObjectURL(c.url);
+        return false;
+      });
+      if (!cands.length){ pdfRenderFirstPage(u8, statusEl, ok, bad); return; }
+      var maxA = 0, i;
+      for (i = 0; i < cands.length; i++) if (cands[i].area > maxA) maxA = cands[i].area;
+      var pick = null, best = -1;
+      for (i = 0; i < cands.length; i++){
+        if (cands[i].area < maxA * 0.92) continue;
+        var f = colourfulness(cands[i].im);
+        if (f > best){ best = f; pick = cands[i]; }
+      }
+      for (i = 0; i < cands.length; i++)
+        if (cands[i] !== pick) URL.revokeObjectURL(cands[i].url);
+      ok(pick.url, 'embedded scan used as-is · ' + pick.im.naturalWidth + ' × ' + pick.im.naturalHeight + ' px' +
+                   (cands.length > 1 ? ' · largest of ' + cands.length : ''));
+    });
+  }, function(){ bad('Could not read that file.'); });
+}
+
+function pdfEngine(){
+  if (PDFJS.mod) return Promise.resolve(PDFJS.mod);
+  var idx = 0;
+  function tryNext(lastErr){
+    if (idx >= PDFJS_CDNS.length) return Promise.reject(lastErr || new Error('could not reach a CDN'));
+    var base = PDFJS_CDNS[idx++];
+    return import(base + '/build/pdf.min.mjs').then(function(mod){
+      mod.GlobalWorkerOptions.workerSrc = base + '/build/pdf.worker.min.mjs';
+      PDFJS.mod = mod; PDFJS.base = base;
+      PDFJS.via = base.indexOf('jsdelivr') > -1 ? 'jsDelivr' : 'unpkg';
+      return mod;
+    }, function(e){ return tryNext(e); });
+  }
+  return tryNext(null);
+}
+
+/* On file:// the worker script is cross-origin, so pdf.js falls back to its
+   in-thread "fake worker" via a CORS import — slower, but one page is fine. */
+function pdfRenderFirstPage(u8, statusEl, ok, bad){
+  statusEl.textContent = 'No embedded photo in that PDF — rendering the page instead. The renderer (pdf.js, ~1.7 MB) comes from a CDN on first use.';
+  statusEl.classList.add('on');
+  pdfEngine().then(function(mod){
+    return mod.getDocument({ data:u8, isEvalSupported:false,
+                             standardFontDataUrl: PDFJS.base + '/standard_fonts/' }).promise;
+  }).then(function(doc){
+    return doc.getPage(1).then(function(page){
+      var v1 = page.getViewport({ scale:1 });
+      var scale = Math.max(1, Math.min(4, 3000 / Math.max(v1.width, v1.height)));
+      var vp = page.getViewport({ scale:scale });
+      var cv = document.createElement('canvas');
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      var ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+      return page.render({ canvasContext:ctx, viewport:vp }).promise.then(function(){
+        var pages = doc.numPages;
+        doc.destroy();
+        cv.toBlob(function(b){
+          if (!b){ bad('The rendered page could not be stored as an image.'); return; }
+          statusEl.classList.remove('on');
+          ok(URL.createObjectURL(b),
+             'page 1' + (pages > 1 ? ' of ' + pages : '') + ' rendered at ' + cv.width + ' × ' + cv.height +
+             ' px · pdf.js ' + PDFJS_VERSION + ' · ' + PDFJS.via);
+        }, 'image/png');
+      });
+    });
+  }).catch(function(e){
+    bad('Could not use that PDF — it has no embedded photo this tool can pull out, and the page renderer did not load (' +
+        String(e && e.message || e) + '). The renderer needs the internet once; offline, export the page as a JPG or PNG and load that.');
+  });
+}
+
+var loadToken = 0;
+function load(file){
+  var token = ++loadToken;               // a newer load silences any stale async PDF result
+  els.loadErr.classList.remove('on');
+  if (looksPdf(file)){
+    pdfToImage(file, els.loadErr, function(url, note){
+      if (token !== loadToken){ URL.revokeObjectURL(url); return; }
+      loadUrl(url, note);
+    }, function(msg){ if (token === loadToken) fail(msg); });
+    return;
+  }
+  if (!/^image\//.test(file.type)) {
+    fail('That is not an image file. Use a JPEG, PNG or PDF.');
+    return;
+  }
+  loadUrl(URL.createObjectURL(file), null);
+}
+
+function loadUrl(url, pdfNote){
+  var im = new Image();
+  im.onload = function(){
+    if (!im.naturalWidth) { fail('That image could not be read.'); return; }
+    S.img = im; S.iw = im.naturalWidth; S.ih = im.naturalHeight;
+    S.pdfNote = pdfNote || null;         // only committed once the image is real
+    S.crownF = 0.14; S.chinF = 0.56; S.centreF = 0.5;
+    S.nudgeMm = 0; S.shiftMm = 0; syncOffsetInputs();
+    aiInvalidate();
+    if (S.bgMode === 'ai') aiSegment();
+    els.srcImg.src = url;
+    els.measurePanel.classList.remove('hide');
+    els.specPanel.classList.remove('hide');
+    els.bgPanel.classList.remove('hide');
+    els.sheetPanel.classList.remove('hide');
+    els.digitalPanel.classList.remove('hide');
+    els.resultEmpty.classList.add('hide');
+    els.resultBody.classList.remove('hide');
+    sizeStage();
+    render();
+    els.measurePanel.scrollIntoView({behavior:'smooth', block:'start'});
+  };
+  im.onerror = function(){
+    URL.revokeObjectURL(url);
+    fail('That file could not be opened. If it came off an iPhone it may be HEIC — export or save it as JPEG first, then try again.');
+  };
+  im.src = url;
+}
+
+function sizeStage(){
+  if (!S.img) return;
+  var maxH = Math.min(460, window.innerHeight * 0.55);
+  var colW = els.stage.parentElement.clientWidth - 36;
+  var w = Math.min(colW, maxH * (S.iw / S.ih));
+  els.stage.style.width = w + 'px';
+  els.stage.style.height = (w * S.ih / S.iw) + 'px';
+  placeHandles();
+}
+window.addEventListener('resize', function(){ sizeStage(); sheetRulers(); });
+
+/* ---------- marker handles ---------- */
+
+function placeHandles(){
+  els.hCrown.style.top   = (S.crownF * 100) + '%';
+  els.hChin.style.top    = (S.chinF  * 100) + '%';
+  els.hCentre.style.left = (S.centreF * 100) + '%';
+  els.hCrown.setAttribute('aria-valuenow', Math.round(S.crownF*100));
+  els.hChin.setAttribute('aria-valuenow', Math.round(S.chinF*100));
+  els.hCentre.setAttribute('aria-valuenow', Math.round(S.centreF*100));
+
+  var top = S.crownF * 100, bot = S.chinF * 100;
+  els.caliper.style.top = top + '%';
+  els.caliper.style.height = (bot - top) + '%';
+  els.caliperAmt.textContent = S.headMm.toFixed(1) + ' mm';
+}
+
+function drag(el, axis){
+  var active = false;
+  el.addEventListener('pointerdown', function(e){
+    active = true; el.setPointerCapture(e.pointerId); e.preventDefault(); el.focus();
+  });
+  el.addEventListener('pointermove', function(e){
+    if (!active) return;
+    var r = els.stage.getBoundingClientRect();
+    if (axis === 'y') {
+      var f = clamp((e.clientY - r.top) / r.height, 0, 1);
+      if (el === els.hCrown) S.crownF = Math.min(f, S.chinF - 0.03);
+      else S.chinF = Math.max(f, S.crownF + 0.03);
+    } else {
+      S.centreF = clamp((e.clientX - r.left) / r.width, 0, 1);
+    }
+    requestRender();
+  });
+  ['pointerup','pointercancel'].forEach(function(t){
+    el.addEventListener(t, function(){ active = false; });
+  });
+  el.addEventListener('keydown', function(e){
+    var step = e.shiftKey ? 0.02 : 0.004, used = true;
+    if (axis === 'y') {
+      if (e.key === 'ArrowUp')        adjust(el, -step);
+      else if (e.key === 'ArrowDown') adjust(el,  step);
+      else used = false;
+    } else {
+      if (e.key === 'ArrowLeft')       S.centreF = clamp(S.centreF - step, 0, 1);
+      else if (e.key === 'ArrowRight') S.centreF = clamp(S.centreF + step, 0, 1);
+      else used = false;
+    }
+    if (used) { e.preventDefault(); render(); }
+  });
+}
+function adjust(el, d){
+  if (el === els.hCrown) S.crownF = clamp(Math.min(S.crownF + d, S.chinF - 0.03), 0, 1);
+  else S.chinF = clamp(Math.max(S.chinF + d, S.crownF + 0.03), 0, 1);
+}
+drag(els.hCrown,'y'); drag(els.hChin,'y'); drag(els.hCentre,'x');
+
+function clamp(v,a,b){ return v < a ? a : (v > b ? b : v); }
+
+/* ---------- pan the photo inside the frame ---------- */
+
+(function(){
+  var on = false, sx = 0, sy = 0, ox = 0, oy = 0, k = 1;
+  var box = els.photobox;
+
+  box.addEventListener('pointerdown', function(e){
+    if (!S.img) return;
+    on = true; box.setPointerCapture(e.pointerId); e.preventDefault(); box.focus();
+    sx = e.clientX; sy = e.clientY; ox = S.shiftMm; oy = S.nudgeMm;
+    k = S.spec.h / box.getBoundingClientRect().height;   // mm of photo per screen pixel
+  });
+  box.addEventListener('pointermove', function(e){
+    if (!on) return;
+    S.shiftMm = clamp(ox + (e.clientX - sx) * k, -PAN, PAN);
+    S.nudgeMm = clamp(oy + (e.clientY - sy) * k, -PAN, PAN);
+    syncOffsetInputs();
+    requestRender();
+  });
+  ['pointerup','pointercancel'].forEach(function(t){
+    box.addEventListener(t, function(){ on = false; });
+  });
+  box.addEventListener('keydown', function(e){
+    if (!S.img) return;
+    var step = e.shiftKey ? 1 : 0.2, used = true;
+    if (e.key === 'ArrowUp')         S.nudgeMm = clamp(S.nudgeMm - step, -PAN, PAN);
+    else if (e.key === 'ArrowDown')  S.nudgeMm = clamp(S.nudgeMm + step, -PAN, PAN);
+    else if (e.key === 'ArrowLeft')  S.shiftMm = clamp(S.shiftMm - step, -PAN, PAN);
+    else if (e.key === 'ArrowRight') S.shiftMm = clamp(S.shiftMm + step, -PAN, PAN);
+    else used = false;
+    if (used) { e.preventDefault(); syncOffsetInputs(); requestRender(); }
+  });
+})();
+
+/* ---------- spec controls ---------- */
+
+els.spec.addEventListener('change', function(){
+  S.spec = SPECS.filter(function(s){ return s.id === els.spec.value; })[0];
+  els.customSize.classList.toggle('on', S.spec.id === 'custom');
+  if (S.spec.id === 'custom') syncCustom();
+  S.headMm = S.spec.headDef;
+  syncHeadSlider();
+  render();
+});
+
+function syncCustom(){
+  var s = S.spec;
+  s.w = clamp(parseFloat(els.cw.value) || 35, 20, 101);
+  s.h = clamp(parseFloat(els.ch.value) || 45, 20, 152);
+  var hd = clamp(parseFloat(els.chd.value) || 34, 10, s.h - 2);
+  s.headMin = Math.max(10, hd - 2); s.headMax = Math.min(s.h - 2, hd + 2); s.headDef = hd;
+  S.headMm = hd;
+}
+['cw','ch','chd'].forEach(function(k){
+  els[k].addEventListener('input', function(){ syncCustom(); syncHeadSlider(); render(); });
+});
+
+function syncHeadSlider(){
+  var s = S.spec, span = s.headMax - s.headMin;
+  els.head.value = span > 0 ? Math.round((S.headMm - s.headMin) / span * 100) : 50;
+  els.headRange.textContent = 'allowed ' + s.headMin + '–' + s.headMax + ' mm';
+}
+els.head.addEventListener('input', function(){
+  var s = S.spec;
+  S.headMm = s.headMin + (els.head.value / 100) * (s.headMax - s.headMin);
+  render();
+});
+els.nudge.addEventListener('input', function(){ S.nudgeMm = els.nudge.value / 10; requestRender(); });
+els.shift.addEventListener('input', function(){ S.shiftMm = els.shift.value / 10; requestRender(); });
+els.recentre.addEventListener('click', function(){
+  S.nudgeMm = 0; S.shiftMm = 0; syncOffsetInputs(); render();
+});
+
+els.bgOn.addEventListener('change', function(){
+  S.bgOn = els.bgOn.checked;
+  els.bgOpts.classList.toggle('hide', !S.bgOn);
+  render();
+});
+els.bgSwatch.addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  syncSwatches(b.dataset.c);
+  render();
+});
+els.tol.addEventListener('input', function(){
+  S.bgTol = +els.tol.value; els.tolVal.textContent = S.bgTol; requestRender();
+});
+els.soft.addEventListener('input', function(){
+  S.bgSoft = +els.soft.value; els.softVal.textContent = S.bgSoft + ' px'; requestRender();
+});
+els.guides.addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  S.guides = b.dataset.v;
+  Array.prototype.forEach.call(els.guides.children, function(c){
+    c.setAttribute('aria-pressed', String(c === b));
+  });
+  render();
+});
+els.safe.addEventListener('change', function(){ S.safe = els.safe.checked; render(); });
+
+/* ---------- the crop ---------- */
+
+function geometry(){
+  var s = S.spec;
+  var outW = Math.round(mm(s.w)), outH = Math.round(mm(s.h));
+  var headSrcPx = (S.chinF - S.crownF) * S.ih;
+  var scale = mm(S.headMm) / headSrcPx;
+  var crownTop = (outH - mm(S.headMm)) * s.topFrac + mm(S.nudgeMm);
+  var dw = S.iw * scale, dh = S.ih * scale;
+  var dx = outW / 2 - (S.centreF * S.iw) * scale + mm(S.shiftMm);
+  var dy = crownTop - (S.crownF * S.ih) * scale;
+  return { outW:outW, outH:outH, scale:scale, dx:dx, dy:dy, dw:dw, dh:dh,
+           crownTop:crownTop, chinTop:crownTop + mm(S.headMm) };
+}
+
+function drawOne(){
+  var g = geometry();
+  oneCanvas.width = g.outW; oneCanvas.height = g.outH;
+  var c = oneCanvas.getContext('2d', { willReadFrequently:true });
+  var ai = aiActive();
+  c.fillStyle = (S.bgOn || ai) ? S.bgColor : '#fff';
+  c.fillRect(0, 0, g.outW, g.outH);
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(S.img, g.dx, g.dy, g.dw, g.dh);
+  if (ai) aiCompositeInto(c, g);
+  else if (S.bgOn) replaceBackground(c, g.outW, g.outH);
+  return g;
+}
+
+/* ---------- experimental background replacement ----------
+   No model, no network: sample the wall colour from the top strip and the upper
+   sides, flood inwards from the border while the colour stays close to it, blur
+   the resulting mask so hair edges are not razor cut, then blend to a flat colour. */
+
+function clampi(v,a,b){ return v < a ? a : (v > b ? b : v); }
+
+function boxBlur(src, w, h, r){
+  var tmp = new Float32Array(src.length), out = new Float32Array(src.length);
+  var d = 2 * r + 1, x, y, sum;
+  for (y = 0; y < h; y++){
+    var row = y * w; sum = 0;
+    for (x = -r; x <= r; x++) sum += src[row + clampi(x, 0, w-1)];
+    for (x = 0; x < w; x++){
+      tmp[row + x] = sum / d;
+      sum -= src[row + clampi(x - r, 0, w-1)];
+      sum += src[row + clampi(x + r + 1, 0, w-1)];
+    }
+  }
+  for (x = 0; x < w; x++){
+    sum = 0;
+    for (y = -r; y <= r; y++) sum += tmp[clampi(y, 0, h-1) * w + x];
+    for (y = 0; y < h; y++){
+      out[y * w + x] = sum / d;
+      sum -= tmp[clampi(y - r, 0, h-1) * w + x];
+      sum += tmp[clampi(y + r + 1, 0, h-1) * w + x];
+    }
+  }
+  return out;
+}
+
+function replaceBackground(ctx, w, h){
+  var frame = ctx.getImageData(0, 0, w, h), d = frame.data, n = w * h;
+
+  // reference colour — top strip plus the upper thirds of the left and right
+  // edges. Shoulders reach the bottom corners, so those are deliberately excluded.
+  var strip = Math.max(2, Math.round(h * 0.06));
+  var side  = Math.max(2, Math.round(w * 0.05));
+  var upper = Math.round(h * 0.55);
+  var rs = [], gs = [], bs = [], x, y, p;
+  for (y = 0; y < strip; y++)
+    for (x = 0; x < w; x += 2){ p = (y*w+x)*4; rs.push(d[p]); gs.push(d[p+1]); bs.push(d[p+2]); }
+  for (y = strip; y < upper; y += 2){
+    for (x = 0; x < side; x++){ p = (y*w+x)*4; rs.push(d[p]); gs.push(d[p+1]); bs.push(d[p+2]); }
+    for (x = w - side; x < w; x++){ p = (y*w+x)*4; rs.push(d[p]); gs.push(d[p+1]); bs.push(d[p+2]); }
+  }
+  var median = function(a){ a.sort(function(u,v){ return u - v; }); return a.length ? a[a.length >> 1] : 255; };
+  var R = median(rs), G = median(gs), B = median(bs);
+
+  var lim = S.bgTol * S.bgTol * 3;
+  var WW = R*R + G*G + B*B || 1;
+  var seen = new Uint8Array(n), stack = new Int32Array(n), sp = 0;
+
+  // Beyond the tolerance a pixel may still join, but only if it is (a) reached
+  // through a smooth ramp rather than an edge, and (b) a plausible *shade* of
+  // the wall — same hue, just darker, which is what a shadow is. Hair and
+  // clothing differ in hue, not merely brightness, so they still stop the fill.
+  function push(i, fromQ){
+    if (seen[i]) return;
+    var q = i * 4, pr = d[q], pg = d[q+1], pb = d[q+2];
+    var dr = pr - R, dg = pg - G, db = pb - B;
+    if (dr*dr + dg*dg + db*db > lim){
+      if (fromQ < 0) return;
+      var lr = pr - d[fromQ], lg = pg - d[fromQ+1], lb = pb - d[fromQ+2];
+      if (lr*lr + lg*lg + lb*lb > 300) return;
+      var t = (pr*R + pg*G + pb*B) / WW;
+      if (t < 0.45 || t > 1.15) return;
+      var er = pr - t*R, eg = pg - t*G, eb = pb - t*B;
+      if (er*er + eg*eg + eb*eb > 588) return;
+    }
+    seen[i] = 1; stack[sp++] = i;
+  }
+  for (x = 0; x < w; x++){ push(x, -1); push((h-1)*w + x, -1); }
+  for (y = 0; y < h; y++){ push(y*w, -1); push(y*w + w - 1, -1); }
+
+  var mask = new Float32Array(n), filled = 0, i;
+  while (sp > 0){
+    i = stack[--sp];
+    mask[i] = 1; filled++;
+    x = i % w; y = (i / w) | 0;
+    var fq = i * 4;
+    if (x > 0)     push(i - 1, fq);
+    if (x < w - 1) push(i + 1, fq);
+    if (y > 0)     push(i - w, fq);
+    if (y < h - 1) push(i + w, fq);
+  }
+  S.bgFilled = filled / n;
+
+  if (S.bgSoft > 0) mask = boxBlur(mask, w, h, S.bgSoft);
+
+  var cr = parseInt(S.bgColor.slice(1,3), 16),
+      cg = parseInt(S.bgColor.slice(3,5), 16),
+      cb = parseInt(S.bgColor.slice(5,7), 16);
+  for (i = 0; i < n; i++){
+    var a = mask[i];
+    if (a <= 0.003) continue;
+    if (a > 1) a = 1;
+    p = i * 4;
+    d[p]   += (cr - d[p])   * a;
+    d[p+1] += (cg - d[p+1]) * a;
+    d[p+2] += (cb - d[p+2]) * a;
+  }
+  ctx.putImageData(frame, 0, 0);
+}
+
+/* ---------- sheet layout ---------- */
+
+function layout(){
+  var s = S.spec;
+  var pw = mm(s.w), ph = mm(s.h);
+  var inset = S.safe ? mm(3) : 0;
+  var availW = SHEET_W - inset * 2, availH = SHEET_H - inset * 2;
+  var best = null;
+
+  [mm(2), mm(1), 0].forEach(function(gap){
+    [[pw, ph, false], [ph, pw, true]].forEach(function(o){
+      var cols = Math.floor((availW + gap) / (o[0] + gap));
+      var rows = Math.floor((availH + gap) / (o[1] + gap));
+      if (cols < 1 || rows < 1) return;
+      var n = cols * rows;
+      if (!best || n > best.n) best = { n:n, cols:cols, rows:rows, gap:gap, w:o[0], h:o[1], rot:o[2] };
+    });
+  });
+  if (!best) return null;
+
+  var gridW = best.cols * best.w + (best.cols - 1) * best.gap;
+  var gridH = best.rows * best.h + (best.rows - 1) * best.gap;
+  best.x0 = (SHEET_W - gridW) / 2;
+  best.y0 = (SHEET_H - gridH) / 2;
+  best.marginX = best.x0; best.marginY = best.y0;
+  return best;
+}
+
+function drawSheet(L){
+  var cv = els.sheetCanvas;
+  cv.width = SHEET_W; cv.height = SHEET_H;
+  var c = cv.getContext('2d');
+  c.fillStyle = '#fff'; c.fillRect(0, 0, SHEET_W, SHEET_H);
+  if (!L) return;
+
+  for (var r = 0; r < L.rows; r++){
+    for (var k = 0; k < L.cols; k++){
+      var x = L.x0 + k * (L.w + L.gap);
+      var y = L.y0 + r * (L.h + L.gap);
+      c.save();
+      if (L.rot){ c.translate(x + L.w, y); c.rotate(Math.PI / 2); c.drawImage(oneCanvas, 0, 0); }
+      else { c.drawImage(oneCanvas, x, y); }
+      c.restore();
+
+      if (S.guides === 'line'){
+        c.strokeStyle = '#c0c4c4'; c.lineWidth = 1;
+        c.strokeRect(x + 0.5, y + 0.5, L.w - 1, L.h - 1);
+      } else if (S.guides === 'marks'){
+        var t = mm(2.2), room = Math.min(L.gap / 2, L.marginX, L.marginY);
+        if (room >= 4){
+          var len = Math.min(t, room);
+          c.strokeStyle = '#7d8382'; c.lineWidth = 1;
+          [[x, y, -1, -1], [x + L.w, y, 1, -1], [x, y + L.h, -1, 1], [x + L.w, y + L.h, 1, 1]]
+          .forEach(function(p){
+            c.beginPath();
+            c.moveTo(p[0] + p[2] * 2, p[1] + 0.5); c.lineTo(p[0] + p[2] * len, p[1] + 0.5);
+            c.moveTo(p[0] + 0.5, p[1] + p[3] * 2); c.lineTo(p[0] + 0.5, p[1] + p[3] * len);
+            c.stroke();
+          });
+        } else {
+          c.strokeStyle = '#c0c4c4'; c.lineWidth = 1;
+          c.strokeRect(x + 0.5, y + 0.5, L.w - 1, L.h - 1);
+        }
+      }
+    }
+  }
+}
+
+/* ---------- ruler ---------- */
+
+function drawRuler(dispH, hMm){
+  var svg = els.ruler, W = 30;
+  var px = dispH / hMm;
+  var parts = ['<rect x="0" y="0" width="' + W + '" height="' + dispH + '" fill="#ffffff"/>'];
+  for (var v = 0; v <= Math.round(hMm); v++){
+    var y = (dispH - v * px).toFixed(2);
+    var major = v % 10 === 0, med = v % 5 === 0;
+    var len = major ? 12 : (med ? 7 : 4);
+    parts.push('<line x1="' + (W - len) + '" y1="' + y + '" x2="' + W + '" y2="' + y +
+               '" stroke="' + (major ? '#15181a' : '#9aa2a1') + '" stroke-width="' + (major ? 1 : .75) + '"/>');
+    if (major && v > 0 && v < hMm - 1)
+      parts.push('<text x="' + (W - 14) + '" y="' + (parseFloat(y) + 3.5) +
+                 '" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#666e6d">' + v + '</text>');
+  }
+  parts.push('<text x="2" y="10" font-family="IBM Plex Mono, monospace" font-size="8" fill="#666e6d">mm</text>');
+  svg.setAttribute('width', W); svg.setAttribute('height', dispH);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + dispH);
+  svg.innerHTML = parts.join('');
+}
+
+/* ---------- sheet rulers ----------
+   Screen-only: they frame the preview so the white rectangle reads as the
+   whole 4x6 paper and the grey band reads as chrome. The printable canvas is
+   untouched — downloads carry no ruler. */
+function sheetRulers(){
+  var cv = els.sheetCanvas;
+  var w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  var RH = 14, RW = 18, parts, v, x, y, len, major;
+  parts = ['<rect width="' + w + '" height="' + RH + '" fill="#f4f5f5"/>'];
+  for (v = 0; v <= 24; v++){
+    x = (v / 4) * (w / 6);
+    major = v % 4 === 0;
+    len = major ? 9 : (v % 2 === 0 ? 6 : 3.5);
+    parts.push('<line x1="' + x.toFixed(1) + '" y1="' + RH + '" x2="' + x.toFixed(1) + '" y2="' + (RH - len) +
+               '" stroke="' + (major ? '#15181a' : '#9aa2a1') + '" stroke-width="' + (major ? 1 : .75) + '"/>');
+    if (major && v > 0 && v < 24)
+      parts.push('<text x="' + (x + 3).toFixed(1) + '" y="' + (RH - 5) +
+                 '" font-family="IBM Plex Mono, monospace" font-size="8" fill="#666e6d">' + (v / 4) + '</text>');
+  }
+  parts.push('<text x="2" y="' + (RH - 5) + '" font-family="IBM Plex Mono, monospace" font-size="8" fill="#666e6d">in</text>');
+  els.sheetRulerH.setAttribute('width', w); els.sheetRulerH.setAttribute('height', RH);
+  els.sheetRulerH.setAttribute('viewBox', '0 0 ' + w + ' ' + RH);
+  els.sheetRulerH.innerHTML = parts.join('');
+
+  parts = ['<rect width="' + RW + '" height="' + h + '" fill="#f4f5f5"/>'];
+  for (v = 0; v <= 16; v++){
+    y = (v / 4) * (h / 4);
+    major = v % 4 === 0;
+    len = major ? 9 : (v % 2 === 0 ? 6 : 3.5);
+    parts.push('<line x1="' + RW + '" y1="' + y.toFixed(1) + '" x2="' + (RW - len) + '" y2="' + y.toFixed(1) +
+               '" stroke="' + (major ? '#15181a' : '#9aa2a1') + '" stroke-width="' + (major ? 1 : .75) + '"/>');
+    if (major && v > 0 && v < 16)
+      parts.push('<text x="' + (RW - 11) + '" y="' + (y + 9).toFixed(1) +
+                 '" font-family="IBM Plex Mono, monospace" font-size="8" fill="#666e6d">' + (v / 4) + '</text>');
+  }
+  els.sheetRulerV.setAttribute('width', RW); els.sheetRulerV.setAttribute('height', h);
+  els.sheetRulerV.setAttribute('viewBox', '0 0 ' + RW + ' ' + h);
+  els.sheetRulerV.innerHTML = parts.join('');
+}
+// the canvas resizes with layout (columns settling, tab switches, window) —
+// track its box directly so the rulers can never go stale
+if (typeof ResizeObserver !== 'undefined')
+  new ResizeObserver(function(){ sheetRulers(); }).observe(els.sheetCanvas);
+
+/* ---------- render ---------- */
+
+function render(){
+  if (!S.img) return;
+  placeHandles();
+
+  var g = drawOne();
+  var s = S.spec;
+
+  // display the single photo at a readable size
+  var dispH = Math.min(320, Math.max(220, 320));
+  var dispW = dispH * (s.w / s.h);
+  els.photobox.style.width = dispW + 'px';
+  els.photobox.style.height = dispH + 'px';
+  els.photoCanvas.width = g.outW; els.photoCanvas.height = g.outH;
+  els.photoCanvas.getContext('2d').drawImage(oneCanvas, 0, 0);
+  drawRuler(dispH, s.h);
+
+  // eye zone overlay, where the standard specifies one
+  if (s.eyeMin){
+    var topPct = (1 - s.eyeMax / s.h) * 100, botPct = (1 - s.eyeMin / s.h) * 100;
+    els.eyeZone.style.top = topPct + '%';
+    els.eyeZone.style.height = (botPct - topPct) + '%';
+    els.eyeZone.classList.remove('hide');
+  } else {
+    els.eyeZone.classList.add('hide');
+  }
+
+  var L = layout();
+  drawSheet(L);
+  els.count.textContent = L ? L.n : 0;
+  els.countUnit.textContent = (L && L.n === 1 ? 'photo per sheet' : 'photos per sheet') +
+    (L && L.rot ? ' · rotated to fit' : '');
+
+  els.headVal.textContent = S.headMm.toFixed(1) + ' mm';
+  els.nudgeVal.textContent = (S.nudgeMm > 0 ? '+' : '') + S.nudgeMm.toFixed(1) + ' mm';
+  els.shiftVal.textContent = (S.shiftMm > 0 ? '+' : '') + S.shiftMm.toFixed(1) + ' mm';
+  readouts(g, L);
+
+  els.printNote.innerHTML = '<strong>Printing:</strong> the white rectangle inside the rulers is the whole 4 × 6 in sheet, margins included — the grey band around it is this preview\'s frame and never prints. Order it as a single 4 × 6 in (10 × 15 cm) print, ' +
+    'or print at home on 4 × 6 paper with scaling set to <strong>actual size</strong> — never “fit to page”, ' +
+    'which silently shrinks everything. Measure one photo with a ruler before you cut. ' +
+    (S.safe ? '' : 'Some labs trim 1–2 mm off the edges; tick the 3 mm border option if yours does. ') +
+    s.note +
+    (S.bgOn ? ' <strong>The background is being replaced.</strong> Look closely at the hairline, ears and shoulders' +
+              ' before you print — if you can see chewed edges or leftover patches of wall, move the removal slider' +
+              ' or turn it off and reshoot against a plain, evenly lit wall.' : '');
+
+  requestAnimationFrame(sheetRulers);
+  scheduleExport();
+  if (!els.tabExp.hidden) scheduleCompare();
+}
+
+function ro(k, v, state, n){
+  return '<div class="ro"><span class="k">' + k + '</span>' +
+         '<span class="v ' + (state || '') + '">' +
+         (state ? '<span class="dot ' + state + '"></span>' : '') + v + '</span>' +
+         (n ? '<span class="n ' + (state || '') + '">' + n + '</span>' : '') + '</div>';
+}
+
+function readouts(g, L){
+  var s = S.spec, out = [];
+  var px2mm = function(p){ return p / MM; };
+
+  if (S.pdfNote) out.push(ro('Source', 'PDF', 'ok', S.pdfNote));
+  out.push(ro('Photo size', s.w + ' × ' + s.h + ' mm', '', g.outW + ' × ' + g.outH + ' px'));
+  out.push(ro('Head height', S.headMm.toFixed(1) + ' mm', 'ok',
+              'allowed ' + s.headMin + '–' + s.headMax + ' mm'));
+
+  var above = px2mm(g.crownTop);
+  var below = s.h - px2mm(g.chinTop);
+  out.push(ro('Above the head', above.toFixed(1) + ' mm',
+              above >= 1.5 ? 'ok' : 'warn',
+              above >= 1.5 ? 'clear of the edge' : 'hair is touching the top edge'));
+  out.push(ro('Below the chin', below.toFixed(1) + ' mm',
+              below >= 3 ? 'ok' : 'warn',
+              below >= 3 ? 'shoulders visible' : 'chin is crowding the bottom'));
+
+  var eff = Math.round(DPI / g.scale);
+  out.push(ro('Print resolution', eff + ' dpi',
+              eff >= 300 ? 'ok' : (eff >= 200 ? 'warn' : 'warn'),
+              eff >= 300 ? 'sharp at this size'
+                         : (eff >= 200 ? 'a little soft — fine for most labs'
+                                       : 'too low, the print will look mushy')));
+
+  var covered = g.dx <= 0.5 && g.dy <= 0.5 &&
+                (g.dx + g.dw) >= g.outW - 0.5 && (g.dy + g.dh) >= g.outH - 0.5;
+  out.push(ro('Frame coverage', covered ? 'full' : 'white edges',
+              covered ? 'ok' : 'warn',
+              covered ? 'photo fills the frame' : 'need more space around the head in the original'));
+
+  if (aiActive()){
+    out.push(ro('Background', 'AI segmentation', 'warn',
+      'experimental — inspect the hairline before printing or uploading'));
+  } else if (S.bgMode === 'ai' && S.img && AI.mode !== 'failed'){
+    out.push(ro('Background', 'AI — analysing…', 'warn',
+      (S.bgOn ? 'classic result shown' : 'no removal applied') + ' until the new mask is ready'));
+  } else if (S.bgOn){
+    var f = S.bgFilled;
+    out.push(ro('Background', 'replaced', f > 0.06 && f < 0.82 ? 'warn' : 'warn',
+      f < 0.06 ? 'barely anything removed — raise the slider'
+               : (f > 0.82 ? 'removing most of the frame — lower the slider'
+                           : Math.round(f * 100) + '% of the frame · inspect the hairline')));
+  }
+
+  if (L) out.push(ro('Sheet', L.cols + ' × ' + L.rows + ' on 4 × 6 in', '',
+                     'gap ' + px2mm(L.gap).toFixed(1) + ' mm'));
+
+  els.readouts.innerHTML = out.join('');
+}
+
+/* ---------- export ---------- */
+
+function stampDpi(buf, dpi){
+  var b = new Uint8Array(buf);
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF && b[3] === 0xE0 &&
+      b[6] === 0x4A && b[7] === 0x46 && b[8] === 0x49 && b[9] === 0x46 && b[10] === 0x00){
+    b[13] = 1;                                   // density units = pixels per inch
+    b[14] = dpi >> 8; b[15] = dpi & 0xFF;        // X density
+    b[16] = dpi >> 8; b[17] = dpi & 0xFF;        // Y density
+  }
+  return b;
+}
+
+function save(canvas, name){
+  canvas.toBlob(function(blob){
+    if (!blob) return;
+    blob.arrayBuffer().then(function(buf){
+      var out = new Blob([stampDpi(buf, DPI)], { type:'image/jpeg' });
+      var url = URL.createObjectURL(out);
+      var a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+    });
+  }, 'image/jpeg', 0.95);
+}
+
+els.dlSheet.addEventListener('click', function(){
+  save(els.sheetCanvas, 'passport-sheet-4x6-' + S.spec.id + '.jpg');
+});
+els.dlOne.addEventListener('click', function(){
+  save(oneCanvas, 'passport-photo-' + S.spec.w + 'x' + S.spec.h + 'mm.jpg');
+});
+
+/* ---------- digital upload export ---------- */
+
+var digitalCanvas = document.createElement('canvas');
+var lastDigital = null;      // { blob, url, w, h, bytes, quality, fmt }
+var digitalToken = 0;
+
+function syncPortal(){
+  var p = S.portal;
+  S.px = clamp(S.px, p.pxMin, p.pxMax);
+  els.px.min = p.pxMin; els.px.max = p.pxMax; els.px.value = S.px;
+
+  var fixedPx = p.pxMin === p.pxMax;
+  els.px.disabled = fixedPx;
+  els.pxField.style.opacity = fixedPx ? '.55' : '';
+
+  els.cap.max = Math.max(2000, p.capKb);
+  els.cap.min = Math.max(5, (p.kbMin || 0) + 5);
+  S.capKb = clamp(S.capKb, +els.cap.min, +els.cap.max);
+  els.cap.value = S.capKb;
+
+  if (p.lockFmt && S.fmt !== p.fmt) S.fmt = p.fmt;
+  Array.prototype.forEach.call(els.fmt.children, function(c){
+    c.setAttribute('aria-pressed', String(c.dataset.v === S.fmt));
+  });
+  Array.prototype.forEach.call(els.fmt.children, function(c){
+    c.disabled = p.lockFmt && c.dataset.v !== p.fmt;
+    c.style.opacity = c.disabled ? '.4' : '';
+    c.style.cursor = c.disabled ? 'not-allowed' : 'pointer';
+  });
+
+  els.capField.style.opacity = S.fmt === 'png' ? '.45' : '';
+  els.cap.disabled = S.fmt === 'png';
+  updateDigitalLabels();
+}
+
+function digitalDims(){
+  var p = S.portal, s = S.spec;
+  if (p.square || Math.abs(s.w - s.h) < 0.01) return { w:S.px, h:S.px };
+  // portrait document: the slider sets the shorter side, height follows the ratio
+  return { w:S.px, h:Math.round(S.px * s.h / s.w) };
+}
+
+function updateDigitalLabels(){
+  var d = digitalDims(), p = S.portal;
+  els.pxVal.textContent = d.w + ' × ' + d.h + (p.pxMin === p.pxMax ? ' (fixed)' : '');
+  els.capVal.textContent = S.fmt === 'png' ? 'not adjustable' :
+    (S.capKb >= 1000 ? (S.capKb / 1000).toFixed(1) + ' MB' : S.capKb + ' KB');
+  els.pxRange.textContent = p.pxMin === p.pxMax
+    ? 'this portal requires exactly ' + p.pxMin + ' × ' + p.pxMin + ' px'
+    : (p.maxOnly
+        ? 'portal caps at ' + p.pxMax + ' × ' + p.pxMax + ' px — smaller is accepted, but there is no reason to go lower'
+        : (p.square
+            ? 'portal accepts ' + p.pxMin + '–' + p.pxMax + ' px square'
+            : 'portal wants at least ' + p.pxMin + ' px wide' +
+              (p.pxMinH ? ' and ' + p.pxMinH + ' px tall' : ' on the short side'))) +
+      (p.kbMin ? ' · file must be at least ' + p.kbMin + ' KB' : '');
+  if (p.pxMin === p.pxMax && p.kbMin)
+    els.pxRange.textContent += ' · file must be ' + p.kbMin + '–' + p.capKb + ' KB';
+}
+
+els.portal.addEventListener('change', function(){
+  S.portal = PORTALS.filter(function(p){ return p.id === els.portal.value; })[0];
+  S.px = S.portal.pxDef; S.capKb = Math.min(S.portal.capKb, 2000);
+  S.fmt = S.portal.fmt;
+  syncPortal(); exportDigital();
+});
+els.fmt.addEventListener('click', function(e){
+  var b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  S.fmt = b.dataset.v;
+  Array.prototype.forEach.call(els.fmt.children, function(c){
+    c.setAttribute('aria-pressed', String(c === b));
+  });
+  syncPortal(); exportDigital();
+});
+els.px.addEventListener('input', function(){
+  S.px = +els.px.value; updateDigitalLabels(); scheduleExport();
+});
+els.cap.addEventListener('input', function(){
+  S.capKb = +els.cap.value; updateDigitalLabels(); scheduleExport();
+});
+
+var exportTimer = null;
+function scheduleExport(){
+  clearTimeout(exportTimer);
+  els.digitalOut.innerHTML = '<div class="ro"><span class="k">Working</span>' +
+    '<span class="v" style="color:var(--muted)">compressing…</span></div>';
+  exportTimer = setTimeout(exportDigital, 220);
+}
+
+function blobOf(canvas, type, q){
+  return new Promise(function(res){ canvas.toBlob(res, type, q); });
+}
+
+function exportDigital(){
+  if (!S.img) return;
+  var token = ++digitalToken;
+  var d0 = digitalDims();
+  var p = S.portal;
+
+  var squared = false;
+  function renderAt(w, h){
+    // oneCanvas may be rectangular if a non-square document spec is selected;
+    // take the square at full resolution first, then resample once
+    var src = oneCanvas;
+    if (w === h && oneCanvas.width !== oneCanvas.height){
+      var sw = oneCanvas.width, sh = oneCanvas.height, side = Math.min(sw, sh);
+      var sq = document.createElement('canvas');
+      sq.width = side; sq.height = side;
+      var sqc = sq.getContext('2d');
+      sqc.fillStyle = '#fff'; sqc.fillRect(0, 0, side, side);
+      sqc.drawImage(oneCanvas, (sw - side) / 2, (sh - side) / 2, side, side, 0, 0, side, side);
+      src = sq; squared = true;
+    }
+    var scaled = hqResize(src, w, h);
+    digitalCanvas.width = w; digitalCanvas.height = h;
+    var c = digitalCanvas.getContext('2d');
+    c.fillStyle = '#fff'; c.fillRect(0, 0, w, h);
+    c.drawImage(scaled, 0, 0);
+  }
+
+  if (S.fmt === 'png'){
+    renderAt(d0.w, d0.h);
+    blobOf(digitalCanvas, 'image/png').then(function(b){
+      if (token !== digitalToken) return;
+      finishDigital(b, d0, null, false, squared);
+    });
+    return;
+  }
+
+  var target = S.capKb * 1024;
+  var floor = (p.kbMin || 0) * 1024;
+
+  // Stage 1: binary-search JPEG quality for the largest file that still fits the cap.
+  // Stage 2a: if that lands under the portal's minimum, push quality up towards 1.0.
+  // Stage 2b: if even the quality floor overshoots the cap, step the pixels down.
+  function tryDims(w, h, shrunk){
+    renderAt(w, h);
+    var lo = 0.30, hi = 0.97, best = null, bestQ = null, steps = 0;
+
+    function tooSmall(blob, q){
+      // climb towards maximum quality until we clear the lower bound
+      if (!floor || blob.size >= floor || q >= 0.999){
+        finishDigital(blob, { w:w, h:h }, q, shrunk, squared);
+        return;
+      }
+      var nq = Math.min(1, q + 0.12);
+      blobOf(digitalCanvas, 'image/jpeg', nq).then(function(b){
+        if (token !== digitalToken) return;
+        if (b.size > target && blob.size <= target){
+          finishDigital(blob, { w:w, h:h }, q, shrunk, squared);   // can't grow without busting the cap
+        } else {
+          tooSmall(b, nq);
+        }
+      });
+    }
+
+    (function attempt(q){
+      blobOf(digitalCanvas, 'image/jpeg', q).then(function(b){
+        if (token !== digitalToken) return;
+        if (b.size <= target){ best = b; bestQ = q; lo = q; } else { hi = q; }
+        steps++;
+        if (steps < 7 && hi - lo > 0.02){ attempt((lo + hi) / 2); return; }
+
+        if (best){ tooSmall(best, bestQ); return; }
+
+        var nw = Math.round(w * 0.85);
+        if (nw >= p.pxMin && nw >= 200){
+          tryDims(nw, Math.round(h * 0.85), true);
+        } else {
+          blobOf(digitalCanvas, 'image/jpeg', 0.30).then(function(b2){
+            if (token !== digitalToken) return;
+            finishDigital(b2, { w:w, h:h }, 0.30, shrunk, squared);
+          });
+        }
+      });
+    })(0.80);
+  }
+
+  tryDims(d0.w, d0.h, false);
+}
+
+function finishDigital(blob, d, q, shrunk, sq){
+  if (lastDigital && lastDigital.url) URL.revokeObjectURL(lastDigital.url);
+  lastDigital = { blob:blob, url:URL.createObjectURL(blob), w:d.w, h:d.h,
+                  bytes:blob.size, quality:q, fmt:S.fmt, shrunk:!!shrunk, sq:!!sq };
+  digitalReadout();
+}
+
+function fmtBytes(n){
+  return n >= 1024 * 1024 ? (n / 1024 / 1024).toFixed(2) + ' MB' : Math.round(n / 1024) + ' KB';
+}
+
+function digitalReadout(){
+  if (!lastDigital) { els.digitalOut.innerHTML = ''; return; }
+  var p = S.portal, L = lastDigital, sp = S.spec, out = [];
+  var cap = S.capKb * 1024;
+
+  var dimsOk = L.w >= p.pxMin && L.w <= p.pxMax && (!p.pxMinH || L.h >= p.pxMinH);
+  out.push(ro('Dimensions', L.w + ' × ' + L.h + ' px',
+    dimsOk ? 'ok' : 'warn',
+    L.shrunk ? 'shrunk automatically to meet the size cap'
+      : (dimsOk ? (p.maxOnly ? 'within the ' + p.pxMax + ' px cap' : 'inside the portal range')
+        : ((p.pxMinH && L.h < p.pxMinH)
+            ? 'height under the ' + p.pxMinH + ' px minimum — raise the pixel slider'
+            : 'outside ' + p.pxMin + '–' + p.pxMax + ' px'))));
+  if (L.sq)
+    out.push(ro('Framing', 'centre square', '',
+      'this portal is square — the centre square of the ' + sp.w + ' × ' + sp.h + ' mm crop is used'));
+
+  var over = L.fmt === 'jpeg' && L.bytes > cap;
+  var under = p.kbMin && L.bytes < p.kbMin * 1024;
+  out.push(ro('File size', fmtBytes(L.bytes),
+    (over || under) ? 'warn' : 'ok',
+    under ? 'below the ' + p.kbMin + ' KB minimum — raise the cap or the pixel size'
+      : (L.fmt === 'png' ? (L.bytes > cap ? 'over the limit — switch to JPEG' : 'within the limit')
+          : (over ? 'still over — drop the pixel size'
+                  : (p.kbMin ? 'inside the ' + p.kbMin + '–' + S.capKb + ' KB window'
+                             : 'under your ' + fmtBytes(cap) + ' limit')))));
+
+  if (L.quality != null)
+    out.push(ro('JPEG quality', Math.round(L.quality * 100) + '%',
+      L.quality >= 0.6 ? 'ok' : 'warn',
+      L.quality >= 0.6 ? 'clean' : 'heavy compression — check for blotches around the eyes'));
+
+  out.push(ro('Format', L.fmt === 'jpeg' ? 'JPEG' : 'PNG',
+    (p.lockFmt && L.fmt !== p.fmt) ? 'warn' : 'ok',
+    (p.lockFmt && L.fmt !== p.fmt) ? 'this portal only accepts ' + p.fmt.toUpperCase() : 'accepted'));
+
+  els.digitalOut.innerHTML = out.join('');
+  els.digitalNote.innerHTML = '<strong>Digital only:</strong> ' + p.note +
+    ' This export is separate from the print sheet — resolution here is pixels for a screen, not dpi for paper.';
+}
+
+els.dlDigital.addEventListener('click', function(){
+  if (!lastDigital) return;
+  var a = document.createElement('a');
+  a.href = lastDigital.url;
+  a.download = 'photo-' + S.portal.id + '-' + lastDigital.w + 'x' + lastDigital.h +
+               '.' + (lastDigital.fmt === 'png' ? 'png' : 'jpg');
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+/* ---------- tabs ---------- */
+
+var tabs = [
+  { btn:els.tabBtnPrint, panel:els.tabPrint },
+  { btn:els.tabBtnDoc,   panel:els.tabDoc },
+  { btn:els.tabBtnExp,   panel:els.tabExp }
+];
+tabs.forEach(function(t){
+  t.btn.addEventListener('click', function(){
+    tabs.forEach(function(o){
+      var on = o === t;
+      o.btn.setAttribute('aria-selected', String(on));
+      o.panel.hidden = !on;
+    });
+    if (t.panel === els.tabDoc){ if (DOC.img) sizeCropStage(); }
+    else if (t.panel === els.tabExp) expSync();
+    else { sizeStage(); sheetRulers(); }
+  });
+});
+/* ---------- lossless-ish PNG optimiser ----------
+   A bio page is flat paper, ink, and one small portrait. Ordinary 32-bit PNG
+   spends most of its bytes storing camera noise across the paper. Quantising to
+   an indexed palette and writing an 8-bit PNG keeps every letterform intact
+   while cutting the file by roughly two thirds. Nothing here is a JPEG, so no
+   ringing appears around text. */
+
+var CRC_TABLE = (function(){
+  var t = new Uint32Array(256);
+  for (var n = 0; n < 256; n++){
+    var c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(b){
+  var c = 0xFFFFFFFF;
+  for (var i = 0; i < b.length; i++) c = CRC_TABLE[(c ^ b[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function pngChunk(type, data){
+  var len = data.length, out = new Uint8Array(12 + len);
+  var dv = new DataView(out.buffer);
+  dv.setUint32(0, len);
+  for (var i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  dv.setUint32(8 + len, crc32(out.subarray(4, 8 + len)));
+  return out;
+}
+function hasDeflate(){ return typeof CompressionStream !== 'undefined'; }
+function deflateBytes(u8){
+  var cs = new CompressionStream('deflate');
+  return new Response(new Blob([u8]).stream().pipeThrough(cs)).arrayBuffer()
+    .then(function(buf){ return new Uint8Array(buf); });
+}
+
+/* median-cut quantiser over a 15-bit histogram */
+function quantize(data, n, maxColors){
+  var hist = new Int32Array(32768), i, key;
+  for (i = 0; i < n; i++){
+    var p = i * 4;
+    key = ((data[p] >> 3) << 10) | ((data[p+1] >> 3) << 5) | (data[p+2] >> 3);
+    hist[key]++;
+  }
+  var entries = [];
+  for (key = 0; key < 32768; key++){
+    if (!hist[key]) continue;
+    entries.push([((key >> 10) & 31) << 3, ((key >> 5) & 31) << 3, (key & 31) << 3, hist[key]]);
+  }
+  if (!entries.length) entries.push([255,255,255,1]);
+
+  function box(list){
+    var rmin=255,rmax=0,gmin=255,gmax=0,bmin=255,bmax=0,cnt=0;
+    for (var j = 0; j < list.length; j++){
+      var e = list[j];
+      if (e[0]<rmin) rmin=e[0]; if (e[0]>rmax) rmax=e[0];
+      if (e[1]<gmin) gmin=e[1]; if (e[1]>gmax) gmax=e[1];
+      if (e[2]<bmin) bmin=e[2]; if (e[2]>bmax) bmax=e[2];
+      cnt += e[3];
+    }
+    var dr=rmax-rmin, dg=gmax-gmin, db=bmax-bmin;
+    var axis = dr >= dg && dr >= db ? 0 : (dg >= db ? 1 : 2);
+    return { list:list, axis:axis, range:Math.max(dr,dg,db), count:cnt };
+  }
+
+  var boxes = [box(entries)];
+  while (boxes.length < maxColors){
+    var bi = -1, best = -1;
+    for (i = 0; i < boxes.length; i++){
+      if (boxes[i].list.length < 2) continue;
+      var sc = boxes[i].range * Math.log(boxes[i].count + 1);
+      if (sc > best){ best = sc; bi = i; }
+    }
+    if (bi < 0) break;
+    var b = boxes[bi], ax = b.axis;
+    b.list.sort(function(x, y){ return x[ax] - y[ax]; });
+    var half = b.count / 2, run = 0, cut = 0;
+    for (i = 0; i < b.list.length - 1; i++){
+      run += b.list[i][3];
+      if (run >= half){ cut = i + 1; break; }
+    }
+    if (cut < 1) cut = 1;
+    if (cut >= b.list.length) cut = b.list.length - 1;
+    boxes.splice(bi, 1, box(b.list.slice(0, cut)), box(b.list.slice(cut)));
+  }
+
+  var pal = boxes.map(function(bx){
+    var r=0,g=0,bb=0,c=0;
+    for (var j = 0; j < bx.list.length; j++){
+      var e = bx.list[j];
+      r += e[0]*e[3]; g += e[1]*e[3]; bb += e[2]*e[3]; c += e[3];
+    }
+    c = c || 1;
+    return [Math.round(r/c), Math.round(g/c), Math.round(bb/c)];
+  });
+
+  var cache = new Int16Array(32768).fill(-1);
+  var idx = new Uint8Array(n);
+  for (i = 0; i < n; i++){
+    var q = i * 4;
+    key = ((data[q] >> 3) << 10) | ((data[q+1] >> 3) << 5) | (data[q+2] >> 3);
+    var hit = cache[key];
+    if (hit < 0){
+      var bd = Infinity, bj = 0;
+      for (var j = 0; j < pal.length; j++){
+        var dr2 = data[q]-pal[j][0], dg2 = data[q+1]-pal[j][1], db2 = data[q+2]-pal[j][2];
+        var dd = dr2*dr2 + dg2*dg2 + db2*db2;
+        if (dd < bd){ bd = dd; bj = j; }
+      }
+      hit = bj; cache[key] = bj;
+    }
+    idx[i] = hit;
+  }
+  return { indices:idx, palette:pal };
+}
+
+function encodeIndexedPNG(w, h, indices, palette){
+  var raw = new Uint8Array((w + 1) * h), o = 0;
+  for (var y = 0; y < h; y++){
+    raw[o++] = 0;                                  // filter None suits palette data
+    raw.set(indices.subarray(y * w, (y + 1) * w), o);
+    o += w;
+  }
+  return deflateBytes(raw).then(function(comp){
+    var ihdr = new Uint8Array(13), dv = new DataView(ihdr.buffer);
+    dv.setUint32(0, w); dv.setUint32(4, h);
+    ihdr[8] = 8;      // bit depth
+    ihdr[9] = 3;      // colour type 3 = indexed
+    ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+    var plte = new Uint8Array(palette.length * 3);
+    for (var i = 0; i < palette.length; i++){
+      plte[i*3] = palette[i][0]; plte[i*3+1] = palette[i][1]; plte[i*3+2] = palette[i][2];
+    }
+    return new Blob([
+      new Uint8Array([137,80,78,71,13,10,26,10]),
+      pngChunk('IHDR', ihdr),
+      pngChunk('PLTE', plte),
+      pngChunk('IDAT', comp),
+      pngChunk('IEND', new Uint8Array(0))
+    ], { type:'image/png' });
+  });
+}
+
+/* Levels pass. Paper picks up a grey cast and sensor speckle; pushing near-white
+   to white and near-black to black removes thousands of near-duplicate values.
+   The file shrinks and the text contrast improves, which helps OCR rather than
+   hurting it — this is what a document scanner does. */
+function cleanPaper(cv, amount, gray){
+  if (amount <= 0 && !gray) return;
+  var ctx = cv.getContext('2d', { willReadFrequently:true });
+  var img = ctx.getImageData(0, 0, cv.width, cv.height), d = img.data;
+  var wp = 255 - Math.round(52 * amount), bp = Math.round(28 * amount);
+  var span = Math.max(1, wp - bp), lut = new Uint8ClampedArray(256);
+  for (var i = 0; i < 256; i++){
+    var v = (i - bp) * 255 / span;
+    lut[i] = v < 0 ? 0 : (v > 255 ? 255 : v);
+  }
+  for (var p = 0; p < d.length; p += 4){
+    var r = lut[d[p]], g = lut[d[p+1]], b = lut[d[p+2]];
+    if (gray){ var y = (r*0.299 + g*0.587 + b*0.114) | 0; r = g = b = y; }
+    d[p] = r; d[p+1] = g; d[p+2] = b;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/* ---------- Passport page ---------- */
+
+var DOC = { img:null, rot:0, fmt:'jpeg', capKb:1000, preset:'custom', sharp:0,
+            clean:0, colors:128, gray:false,
+            res:36, strip:0.12, zoomX:'fit', srcW:0, srcH:0, customH:0, outCv:null,
+            crop:{ x:0, y:0, w:1, h:1 }, sizes:{}, jpegQ:null,
+            blob:null, url:null, w:0, h:0, shrunk:false, srcBytes:0, pdfNote:null };
+var docTimer = null, docToken = 0;
+
+/* ---------- high quality resampling ----------
+   Browsers scale images with a cheap filter that samples too few source pixels,
+   so fine detail folds back as jagged edges and speckle. Photoshop and Preview
+   use a wide windowed-sinc filter instead. This is Lanczos-3, the same family:
+   for each output pixel it weighs ~20 source pixels by a windowed sinc kernel.
+   Big reductions are done as alias-safe 2:1 halvings first, purely for speed,
+   then one Lanczos pass lands on the exact target. */
+
+function lanczosK(x, a){
+  if (x === 0) return 1;
+  if (x <= -a || x >= a) return 0;
+  var p = Math.PI * x;
+  return (a * Math.sin(p) * Math.sin(p / a)) / (p * p);
+}
+
+function lanczosWeights(srcLen, dstLen, a){
+  var scale = dstLen / srcLen;
+  var inv = scale < 1 ? scale : 1;
+  var support = scale < 1 ? a / scale : a;
+  var rows = [];
+  for (var i = 0; i < dstLen; i++){
+    var centre = (i + 0.5) / scale - 0.5;
+    var start = Math.max(0, Math.ceil(centre - support));
+    var end = Math.min(srcLen - 1, Math.floor(centre + support));
+    var w = [], sum = 0;
+    for (var j = start; j <= end; j++){
+      var t = lanczosK((j - centre) * inv, a);
+      w.push(t); sum += t;
+    }
+    // normalise so flat areas keep their exact brightness
+    if (sum !== 0) for (var k = 0; k < w.length; k++) w[k] /= sum;
+    rows.push({ st:start, w:w });
+  }
+  return rows;
+}
+
+function lanczosPass(srcCv, dw, dh){
+  var sw = srcCv.width, sh = srcCv.height;
+  var sd = srcCv.getContext('2d', { willReadFrequently:true }).getImageData(0, 0, sw, sh).data;
+
+  var hw = lanczosWeights(sw, dw, 3);
+  var tmp = new Float32Array(sh * dw * 3);
+  for (var y = 0; y < sh; y++){
+    var srow = y * sw * 4, trow = y * dw * 3;
+    for (var x = 0; x < dw; x++){
+      var o = hw[x], r = 0, g = 0, b = 0;
+      for (var k = 0; k < o.w.length; k++){
+        var p = srow + (o.st + k) * 4, wt = o.w[k];
+        r += sd[p] * wt; g += sd[p+1] * wt; b += sd[p+2] * wt;
+      }
+      var t = trow + x * 3;
+      tmp[t] = r; tmp[t+1] = g; tmp[t+2] = b;
+    }
+  }
+
+  var vw = lanczosWeights(sh, dh, 3);
+  var out = document.createElement('canvas');
+  out.width = dw; out.height = dh;
+  var octx = out.getContext('2d', { willReadFrequently:true });
+  var od = octx.createImageData(dw, dh), dd = od.data;
+  for (var yy = 0; yy < dh; yy++){
+    var ov = vw[yy];
+    for (var xx = 0; xx < dw; xx++){
+      var r2 = 0, g2 = 0, b2 = 0;
+      for (var k2 = 0; k2 < ov.w.length; k2++){
+        var q = ((ov.st + k2) * dw + xx) * 3, w2 = ov.w[k2];
+        r2 += tmp[q] * w2; g2 += tmp[q+1] * w2; b2 += tmp[q+2] * w2;
+      }
+      var dq = (yy * dw + xx) * 4;
+      // Lanczos overshoots slightly at hard edges; that is what keeps them crisp,
+      // but it has to be clamped back into range
+      dd[dq]   = r2; dd[dq+1] = g2; dd[dq+2] = b2; dd[dq+3] = 255;
+    }
+  }
+  octx.putImageData(od, 0, 0);
+  return out;
+}
+
+function hqResize(src, dw, dh){
+  dw = Math.max(1, Math.round(dw)); dh = Math.max(1, Math.round(dh));
+  var cur = src, cw = src.width, ch = src.height;
+
+  while (cw >= dw * 2 && ch >= dh * 2 && cw > 2 && ch > 2){
+    var nw = Math.max(dw, cw >> 1), nh = Math.max(dh, ch >> 1);
+    var t = document.createElement('canvas');
+    t.width = nw; t.height = nh;
+    var tc = t.getContext('2d');
+    tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = 'high';
+    tc.drawImage(cur, 0, 0, nw, nh);
+    cur = t; cw = nw; ch = nh;
+  }
+
+  if (cw === dw && ch === dh){
+    var same = document.createElement('canvas');
+    same.width = dw; same.height = dh;
+    var sc = same.getContext('2d', { willReadFrequently:true });
+    sc.fillStyle = '#fff'; sc.fillRect(0, 0, dw, dh);
+    sc.drawImage(cur, 0, 0);
+    return same;
+  }
+  return lanczosPass(cur, dw, dh);
+}
+
+/* Unsharp-style 3x3 convolution — puts back the edge contrast that downscaling
+   averages away. Text goes from grey smudge to legible stroke. */
+function sharpenCanvas(cv, amount){
+  if (amount <= 0) return;
+  var ctx = cv.getContext('2d', { willReadFrequently:true });
+  var w = cv.width, h = cv.height;
+  if (w < 3 || h < 3) return;
+  var img = ctx.getImageData(0, 0, w, h), d = img.data;
+  var src = new Uint8ClampedArray(d);
+  var side = -amount, mid = 1 + 4 * amount, row = w * 4;
+  for (var y = 1; y < h - 1; y++){
+    for (var x = 1; x < w - 1; x++){
+      var i = (y * w + x) * 4;
+      for (var k = 0; k < 3; k++){
+        var p = i + k;
+        var v = src[p] * mid + (src[p-4] + src[p+4] + src[p-row] + src[p+row]) * side;
+        d[p] = v < 0 ? 0 : (v > 255 ? 255 : v);
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+els.docPick.addEventListener('click', function(){ els.docFile.click(); });
+els.docFile.addEventListener('change', function(e){
+  if (e.target.files && e.target.files[0]) docLoad(e.target.files[0]);
+});
+['dragenter','dragover'].forEach(function(t){
+  els.docDrop.addEventListener(t, function(e){ e.preventDefault(); els.docDrop.classList.add('over'); });
+});
+['dragleave','drop'].forEach(function(t){
+  els.docDrop.addEventListener(t, function(e){ e.preventDefault(); els.docDrop.classList.remove('over'); });
+});
+els.docDrop.addEventListener('drop', function(e){
+  var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) docLoad(f);
+});
+
+function docFail(msg){
+  els.docErr.textContent = msg;
+  els.docErr.classList.add('on');
+}
+
+var docLoadToken = 0;
+function docLoad(file){
+  var token = ++docLoadToken;
+  els.docErr.classList.remove('on');
+  if (looksPdf(file)){
+    pdfToImage(file, els.docErr, function(url, note){
+      if (token !== docLoadToken){ URL.revokeObjectURL(url); return; }
+      docLoadUrl(url, file.size, note);
+    }, function(msg){ if (token === docLoadToken) docFail(msg); });
+    return;
+  }
+  if (!/^image\//.test(file.type)){
+    docFail('That is not an image. Use a PNG, JPG or PDF.');
+    return;
+  }
+  docLoadUrl(URL.createObjectURL(file), file.size, null);
+}
+
+function docLoadUrl(url, srcBytes, pdfNote){
+  var im = new Image();
+  im.onload = function(){
+    DOC.img = im; DOC.rot = 0; DOC.srcBytes = srcBytes;
+    DOC.pdfNote = pdfNote || null;
+    DOC.crop = { x:0.04, y:0.04, w:0.92, h:0.92 };
+    els.cropImg.src = url;
+    els.docRotVal.textContent = '0°';
+    els.docBody.classList.remove('hide');
+    sizeCropStage();
+    docExport();
+  };
+  im.onerror = function(){
+    URL.revokeObjectURL(url);
+    els.docErr.textContent = 'That file could not be opened. HEIC photos from an iPhone need to be saved as JPG first.';
+    els.docErr.classList.add('on');
+  };
+  im.src = url;
+}
+
+function rotDims(){
+  var swap = DOC.rot === 90 || DOC.rot === 270;
+  return { w: swap ? DOC.img.naturalHeight : DOC.img.naturalWidth,
+           h: swap ? DOC.img.naturalWidth  : DOC.img.naturalHeight };
+}
+
+function sizeCropStage(){
+  if (!DOC.img) return;
+  var r = rotDims();
+  var colW = els.cropStage.parentElement.clientWidth - 36;
+  var w = Math.min(colW, 320 * (r.w / r.h));
+  if (w / (r.w / r.h) > 320) w = 320 * (r.w / r.h);
+  els.cropStage.style.width = w + 'px';
+  els.cropStage.style.height = (w * r.h / r.w) + 'px';
+  paintCrop();
+}
+window.addEventListener('resize', function(){ sizeCropStage(); });
+
+function paintCrop(){
+  var c = DOC.crop;
+  var L = c.x * 100, T = c.y * 100, W = c.w * 100, H = c.h * 100;
+  els.cropRect.style.left = L + '%';  els.cropRect.style.top = T + '%';
+  els.cropRect.style.width = W + '%'; els.cropRect.style.height = H + '%';
+  els.shTop.style.cssText    = 'left:0;right:0;top:0;height:' + T + '%';
+  els.shBot.style.cssText    = 'left:0;right:0;top:' + (T + H) + '%;bottom:0';
+  els.shLeft.style.cssText   = 'left:0;width:' + L + '%;top:' + T + '%;height:' + H + '%';
+  els.shRight.style.cssText  = 'left:' + (L + W) + '%;right:0;top:' + T + '%;height:' + H + '%';
+}
+
+(function cropDrag(){
+  var mode = null, sx = 0, sy = 0, o = null;
+  function begin(e, m){
+    mode = m; sx = e.clientX; sy = e.clientY;
+    o = { x:DOC.crop.x, y:DOC.crop.y, w:DOC.crop.w, h:DOC.crop.h };
+    els.cropStage.setPointerCapture(e.pointerId);
+    e.preventDefault(); e.stopPropagation();
+  }
+  els.cropRect.addEventListener('pointerdown', function(e){
+    if (e.target.classList.contains('ch')) begin(e, e.target.dataset.h);
+    else begin(e, 'move');
+  });
+  els.cropStage.addEventListener('pointermove', function(e){
+    if (!mode) return;
+    var r = els.cropStage.getBoundingClientRect();
+    var dx = (e.clientX - sx) / r.width, dy = (e.clientY - sy) / r.height;
+    var c = DOC.crop, MIN = 0.08;
+    if (mode === 'move'){
+      c.x = clamp(o.x + dx, 0, 1 - o.w);
+      c.y = clamp(o.y + dy, 0, 1 - o.h);
+    } else {
+      if (mode.indexOf('w') > -1){
+        var nx = clamp(o.x + dx, 0, o.x + o.w - MIN);
+        c.w = o.w + (o.x - nx); c.x = nx;
+      }
+      if (mode.indexOf('e') > -1) c.w = clamp(o.w + dx, MIN, 1 - o.x);
+      if (mode.indexOf('n') > -1){
+        var ny = clamp(o.y + dy, 0, o.y + o.h - MIN);
+        c.h = o.h + (o.y - ny); c.y = ny;
+      }
+      if (mode.indexOf('s') > -1) c.h = clamp(o.h + dy, MIN, 1 - o.y);
+    }
+    paintCrop();
+    clearTimeout(docTimer); docTimer = setTimeout(docExport, 140);
+  });
+  ['pointerup','pointercancel'].forEach(function(t){
+    els.cropStage.addEventListener(t, function(){ if (mode){ mode = null; docExport(); } });
+  });
+})();
+
+els.docRotL.addEventListener('click', function(){ DOC.rot = (DOC.rot + 270) % 360; docRotated(); });
+els.docRotR.addEventListener('click', function(){ DOC.rot = (DOC.rot + 90) % 360; docRotated(); });
+function docRotated(){
+  DOC.crop = { x:0.04, y:0.04, w:0.92, h:0.92 };
+  els.docRotVal.textContent = DOC.rot + '°';
+  els.cropStage.style.transform = '';
+  sizeCropStage(); docExport();
+}
+els.docReset.addEventListener('click', function(){
+  DOC.crop = { x:0, y:0, w:1, h:1 }; paintCrop(); docExport();
+});
+
+var PRESET_RES = { '800x400':18, '400x800':9, '400x400':9, '1600x1600':36 };
+function syncResLabel(){
+  var wpx = Math.round(DOC.res * 44);
+  els.docResVal.textContent = (Math.round(DOC.res * 10) / 10) + ' px/char · ' + wpx + ' px wide';
+  if (document.activeElement !== els.docCustomW) els.docCustomW.value = wpx;
+}
+els.docPreset.addEventListener('change', function(){
+  DOC.preset = els.docPreset.value;
+  var orig = DOC.preset === 'orig', custom = DOC.preset === 'custom';
+  els.docRes.disabled = orig;
+  els.resField.style.opacity = orig ? .45 : '';
+  els.customField.classList.toggle('hide', !custom);
+  if (orig){ els.docResVal.textContent = 'using the original width'; }
+  else if (custom){ syncResLabel(); }
+  else { DOC.res = PRESET_RES[DOC.preset] || 18; els.docRes.value = DOC.res; syncResLabel(); }
+  docExport();
+});
+els.docCustomW.addEventListener('input', function(){
+  var v = +els.docCustomW.value;
+  if (!isFinite(v) || v < 200) return;
+  DOC.res = v / 44;
+  els.docRes.value = Math.max(8, Math.min(36, Math.round(DOC.res)));
+  els.docResVal.textContent = (Math.round(DOC.res * 10) / 10) + ' px/char · ' + Math.round(v) + ' px wide';
+  clearTimeout(docTimer); docTimer = setTimeout(docExport, 250);
+});
+els.docRes.addEventListener('input', function(){
+  DOC.res = +els.docRes.value; syncResLabel();
+  clearTimeout(docTimer); docTimer = setTimeout(docExport, 200);
+});
+els.docCustomH.addEventListener('input', function(){
+  var v = +els.docCustomH.value;
+  DOC.customH = (isFinite(v) && v > 0) ? v : 0;
+  clearTimeout(docTimer); docTimer = setTimeout(docExport, 250);
+});
+els.docStrip.addEventListener('input', function(){
+  DOC.strip = +els.docStrip.value / 100;
+  els.docStripVal.textContent = els.docStrip.value + '%';
+  if (DOC.outCv) drawZoom(DOC.outCv);
+});
+els.docZoomX.addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  DOC.zoomX = b.dataset.v === 'fit' ? 'fit' : +b.dataset.v;
+  Array.prototype.forEach.call(els.docZoomX.children, function(c){
+    c.setAttribute('aria-pressed', String(c === b));
+  });
+  if (DOC.outCv) drawZoom(DOC.outCv);
+});
+els.docFmt.addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  DOC.fmt = b.dataset.v;
+  Array.prototype.forEach.call(els.docFmt.children, function(c){
+    c.setAttribute('aria-pressed', String(c === b));
+  });
+  els.colorField.style.display = DOC.fmt === 'png8' ? '' : 'none';
+  docExport();
+});
+els.docColors.addEventListener('input', function(){
+  DOC.colors = +els.docColors.value;
+  els.docColVal.textContent = DOC.colors + ' colours';
+  clearTimeout(docTimer); docTimer = setTimeout(docExport, 200);
+});
+els.docClean.addEventListener('input', function(){
+  DOC.clean = +els.docClean.value / 100;
+  els.docCleanVal.textContent = els.docClean.value + '%';
+  clearTimeout(docTimer); docTimer = setTimeout(docExport, 200);
+});
+els.docGray.addEventListener('change', function(){
+  DOC.gray = els.docGray.checked; docExport();
+});
+els.docSharp.addEventListener('input', function(){
+  DOC.sharp = +els.docSharp.value / 100;
+  els.docSharpVal.textContent = els.docSharp.value + '%';
+  clearTimeout(docTimer); docTimer = setTimeout(docExport, 180);
+});
+els.docCap.addEventListener('input', function(){
+  DOC.capKb = +els.docCap.value;
+  els.docCapVal.textContent = DOC.capKb >= 1000
+    ? (DOC.capKb / 1000).toFixed(1) + ' MB' : DOC.capKb + ' KB';
+  clearTimeout(docTimer); docTimer = setTimeout(docExport, 200);
+});
+
+function docBounds(){
+  if (DOC.preset === 'orig' || DOC.preset === 'custom') return null;
+  var p = DOC.preset.split('x');
+  return { w:+p[0], h:+p[1] };
+}
+
+/* Rotate and crop at full resolution first, so the downscale afterwards
+   works on exactly the pixels we intend to keep and nothing else. */
+function docSource(){
+  var r = rotDims();
+  var full = document.createElement('canvas');
+  full.width = r.w; full.height = r.h;
+  var c = full.getContext('2d');
+  c.fillStyle = '#fff'; c.fillRect(0, 0, r.w, r.h);
+  c.save();
+  c.translate(r.w / 2, r.h / 2);
+  c.rotate(DOC.rot * Math.PI / 180);
+  var swap = DOC.rot === 90 || DOC.rot === 270;
+  var dw = swap ? r.h : r.w, dh = swap ? r.w : r.h;
+  c.drawImage(DOC.img, -dw / 2, -dh / 2, dw, dh);
+  c.restore();
+
+  var cr = DOC.crop;
+  var cx = Math.round(cr.x * r.w), cy = Math.round(cr.y * r.h);
+  var cw = Math.max(8, Math.round(cr.w * r.w)), chh = Math.max(8, Math.round(cr.h * r.h));
+  if (cw >= r.w && chh >= r.h) return { cv:full, w:r.w, h:r.h };
+
+  var cut = document.createElement('canvas');
+  cut.width = cw; cut.height = chh;
+  cut.getContext('2d').drawImage(full, cx, cy, cw, chh, 0, 0, cw, chh);
+  return { cv:cut, w:cw, h:chh };
+}
+
+function docExport(){
+  if (!DOC.img) return;
+  var token = ++docToken;
+  var src = docSource();
+  var b = docBounds();
+
+  var k = (DOC.preset === 'orig') ? 1 : Math.min(1, (DOC.res * 44) / src.w);
+  if (DOC.preset === 'custom' && DOC.customH > 0) k = Math.min(k, DOC.customH / src.h);
+  var w = Math.max(1, Math.round(src.w * k)), h = Math.max(1, Math.round(src.h * k));
+  var target = DOC.capKb * 1024;
+
+  function build(ww, hh){
+    var cv = hqResize(src.cv, ww, hh);
+    cleanPaper(cv, DOC.clean, DOC.gray);
+    sharpenCanvas(cv, DOC.sharp);
+    return cv;
+  }
+
+  function jpegAt(cv, q){
+    return new Promise(function(res){ cv.toBlob(res, 'image/jpeg', q); });
+  }
+  function pngPlain(cv){
+    return new Promise(function(res){ cv.toBlob(res, 'image/png'); });
+  }
+  function png8(cv){
+    if (!hasDeflate()) return Promise.resolve(null);
+    var ctx = cv.getContext('2d', { willReadFrequently:true });
+    var img = ctx.getImageData(0, 0, cv.width, cv.height);
+    var q = quantize(img.data, cv.width * cv.height, DOC.colors);
+    return encodeIndexedPNG(cv.width, cv.height, q.indices, q.palette);
+  }
+
+  function bestJpeg(cv){
+    var lo = 0.55, hi = 0.97, best = null, bestQ = null, steps = 0;
+    return new Promise(function(resolve){
+      (function step(q){
+        jpegAt(cv, q).then(function(bl){
+          if (!bl) { resolve({ blob:null }); return; }
+          if (bl.size <= target){ best = bl; bestQ = q; lo = q; } else { hi = q; }
+          steps++;
+          if (steps < 6 && hi - lo > 0.03){ step((lo + hi) / 2); return; }
+          if (best) resolve({ blob:best, q:bestQ });
+          else jpegAt(cv, 0.55).then(function(b2){ resolve({ blob:b2, q:0.55 }); });
+        });
+      })(0.92);
+    });
+  }
+
+  function run(ww, hh, shrunk){
+    var cv = build(ww, hh);
+    Promise.all([png8(cv), pngPlain(cv), bestJpeg(cv)]).then(function(r){
+      if (token !== docToken) return;
+      var cand = {
+        png8:  r[0],
+        png24: r[1],
+        jpeg:  r[2] && r[2].blob
+      };
+      DOC.sizes = {
+        png8:  cand.png8  ? cand.png8.size  : null,
+        png24: cand.png24 ? cand.png24.size : null,
+        jpeg:  cand.jpeg  ? cand.jpeg.size  : null
+      };
+      DOC.jpegQ = r[2] ? r[2].q : null;
+
+      var pick = cand[DOC.fmt] || cand.png24 || cand.jpeg;
+      if (!pick) return;
+
+      // Only shrink the image if the chosen encoding genuinely cannot fit.
+      if (pick.size > target && ww > 200){
+        var anyFits = (cand.png8 && cand.png8.size <= target) ||
+                      (cand.jpeg && cand.jpeg.size <= target);
+        if (!anyFits){ run(Math.round(ww * 0.9), Math.round(hh * 0.9), true); return; }
+      }
+
+      if (DOC.url) URL.revokeObjectURL(DOC.url);
+      DOC.blob = pick; DOC.url = URL.createObjectURL(pick);
+      DOC.w = cv.width; DOC.h = cv.height; DOC.shrunk = shrunk;
+      DOC.srcW = src.w; DOC.srcH = src.h; DOC.outCv = cv;
+      els.docPrev.src = DOC.url;
+      drawZoom(cv);
+      docReadout();
+    });
+  }
+
+  run(w, h, false);
+}
+
+/* Show the bottom strip of the output at 1:1 (or 2x if tiny). The MRZ lives
+   there, and it is the first thing to become unreadable. */
+function drawZoom(cv){
+  var stripH = Math.max(24, Math.round(cv.height * (DOC.strip || 0.26)));
+  var sy = cv.height - stripH;
+  var scale = DOC.zoomX === 2 ? 2 : 1;
+  var z = els.docZoom;
+  z.width = cv.width * scale; z.height = stripH * scale;
+  var c = z.getContext('2d');
+  c.imageSmoothingEnabled = false;
+  c.fillStyle = '#fff'; c.fillRect(0, 0, z.width, z.height);
+  c.drawImage(cv, 0, sy, cv.width, stripH, 0, 0, z.width, z.height);
+  if (DOC.zoomX === 'fit'){
+    z.style.width = '100%'; z.style.height = 'auto';
+    z.style.imageRendering = 'auto';
+  } else {
+    z.style.width = z.width + 'px'; z.style.height = z.height + 'px';
+    z.style.imageRendering = 'pixelated';
+  }
+}
+
+function docReadout(){
+  var b = docBounds(), cap = DOC.capKb * 1024, out = [];
+  var fits = !b || (DOC.w <= b.w && DOC.h <= b.h);
+  var hCapped = DOC.preset === 'custom' && DOC.customH > 0 && DOC.srcH > 0 &&
+                (DOC.customH / DOC.srcH) < Math.min(1, (DOC.res * 44) / DOC.srcW);
+
+  if (DOC.pdfNote) out.push(ro('Source', 'PDF', 'ok', DOC.pdfNote));
+  out.push(ro('Dimensions', DOC.w + ' × ' + DOC.h + ' px', fits ? 'ok' : 'warn',
+    DOC.shrunk ? 'shrunk further to meet the size cap'
+      : (!b ? (DOC.preset === 'custom'
+              ? (hCapped ? 'the height cap set the size' : 'width set by hand')
+              : 'original size kept')
+        : (fits ? 'fits inside ' + b.w + ' × ' + b.h
+                : 'bigger than the ' + b.w + ' × ' + b.h + ' preset — fine when the portal only enforces file size'))));
+
+  // The machine-readable zone is 44 characters across the full page width.
+  // Below roughly 10 px per character, OCR starts guessing.
+  var perChar = DOC.w / 44;
+  var asked = DOC.preset !== 'orig' ? DOC.res : null;
+  var mrzNote = perChar >= 12 ? 'should read cleanly'
+      : (perChar >= 9 ? 'marginal — raise the resolution slider or crop tighter'
+                      : 'too coarse for reliable OCR — raise the resolution slider');
+  if (asked && DOC.shrunk)
+    mrzNote = 'the size cap pulled it below your ' + Math.round(asked) + ' px ask — raise the cap, clean up more, or use PNG 8-bit';
+  else if (asked && hCapped && perChar + 0.4 < asked)
+    mrzNote = 'limited by your height cap — raise it for more detail';
+  else if (asked && perChar + 0.4 < asked)
+    mrzNote = 'limited by the source — your crop is only ' + DOC.srcW + ' px across, so there is nothing sharper to keep';
+  out.push(ro('MRZ detail', perChar.toFixed(1) + ' px per character',
+    perChar >= 12 ? 'ok' : 'warn', mrzNote));
+
+  out.push(ro('File size', fmtBytes(DOC.blob.size), DOC.blob.size <= cap ? 'ok' : 'warn',
+    DOC.blob.size <= cap ? 'under your limit' : 'still over — lower the pixel bound'));
+
+  // side-by-side so the saving is visible rather than asserted
+  var sz = DOC.sizes || {}, names = { png8:'PNG 8-bit', png24:'PNG 24-bit', jpeg:'JPG' };
+  ['png8','png24','jpeg'].forEach(function(kk){
+    if (sz[kk] == null) return;
+    var chosen = kk === DOC.fmt;
+    var extra = '';
+    if (kk === 'png8' && sz.png24) extra = Math.round((1 - sz.png8 / sz.png24) * 100) + '% smaller than 24-bit';
+    else if (kk === 'png24') extra = 'lossless, every pixel exact';
+    else if (kk === 'jpeg') extra = 'lossy' + (DOC.jpegQ ? ' at ' + Math.round(DOC.jpegQ * 100) + '%' : '') + ' — softens text edges';
+    out.push(ro((chosen ? '▸ ' : '') + names[kk], fmtBytes(sz[kk]),
+      chosen ? 'ok' : '', extra));
+  });
+
+  if (DOC.srcBytes)
+    out.push(ro('Reduced from', fmtBytes(DOC.srcBytes), '',
+      Math.max(0, Math.round((1 - DOC.blob.size / DOC.srcBytes) * 100)) + '% smaller'));
+
+  els.docOut.innerHTML = out.join('');
+
+  var landscape = DOC.w >= DOC.h;
+  els.docNote.innerHTML = '<strong>Read the strip above before uploading.</strong> ' +
+    'If those characters are not sharp enough for you to read, an automated reader will not manage either. ' +
+    (!landscape ? 'A bio page is a landscape document — leaving it portrait spends the pixel budget on the wrong axis. ' : '') +
+    'In practice Nusuk has accepted a full-resolution upload well above 800 × 400, so the hard rule is the 1 MB file size — ' +
+    'treat the published dimensions as advisory, keep it landscape, and spend the whole megabyte on legible text.';
+}
+
+els.docDl.addEventListener('click', function(){
+  if (!DOC.url) return;
+  var a = document.createElement('a');
+  a.href = DOC.url;
+  a.download = 'nusuk-passport-page.' + (DOC.fmt === 'jpeg' ? 'jpg' : 'png');
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+/* ---------- experimental: AI background (MediaPipe selfie segmentation) ---------- */
+
+var AI = {
+  mode:'idle',                 // idle | loading | ready | failed
+  via:'', err:'',
+  seg:null,                    // ImageSegmenter instance
+  rawMask:null, mw:0, mh:0,    // person confidence 0..1 at working resolution
+  lum:null,                    // luminance guide 0..1 at working resolution
+  maskCv:null,                 // refined alpha as a grayscale canvas (full source frame)
+  thr:50, feather:2, refine:true,
+  segMs:0, coverage:0,
+  local:{ bundle:null, loader:null, wasm:null, model:null }
+};
+var MP_VERSION = '1.0.1';
+var MP_CDNS = [
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + MP_VERSION,
+  'https://unpkg.com/@mediapipe/tasks-vision@' + MP_VERSION
+];
+var MP_MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
+
+function aiActive(){ return S.bgMode === 'ai' && !!AI.maskCv; }
+
+function aiStatusMsg(msg, cls){
+  els.aiStatus.textContent = msg;
+  els.aiStatus.className = 'aipill' + (cls ? ' ' + cls : '');
+}
+
+function aiInvalidate(){
+  AI.rawMask = null; AI.lum = null; AI.maskCv = null;
+  AI.segMs = 0; AI.coverage = 0;
+}
+
+async function aiInit(useLocal){
+  if (AI.mode === 'loading') return;
+  AI.mode = 'loading';
+  aiStatusMsg(useLocal ? 'Starting the engine from your files…' : 'Fetching the engine…');
+  try{
+    var mod = null, fileset = null, modelOpt = null, via = '';
+    if (useLocal){
+      var f = AI.local;
+      if (!(f.bundle && f.loader && f.wasm && f.model))
+        throw new Error('all four files are needed: vision_bundle.mjs, vision_wasm_internal.js, vision_wasm_internal.wasm, selfie_segmenter.tflite');
+      mod = await import(URL.createObjectURL(new Blob([f.bundle], { type:'text/javascript' })));
+      fileset = {
+        wasmLoaderPath: URL.createObjectURL(new Blob([f.loader], { type:'text/javascript' })),
+        wasmBinaryPath: URL.createObjectURL(new Blob([f.wasm], { type:'application/wasm' }))
+      };
+      modelOpt = { modelAssetBuffer: new Uint8Array(f.model) };
+      via = 'local files';
+    } else {
+      var lastErr = null;
+      for (var i = 0; i < MP_CDNS.length && !mod; i++){
+        try { mod = await import(MP_CDNS[i] + '/vision_bundle.mjs'); via = MP_CDNS[i]; }
+        catch(e){ lastErr = e; }
+      }
+      if (!mod) throw (lastErr || new Error('could not reach a CDN'));
+      fileset = await mod.FilesetResolver.forVisionTasks(via + '/wasm');
+      modelOpt = { modelAssetPath: MP_MODEL };
+      via = via.indexOf('jsdelivr') > -1 ? 'jsDelivr' : 'unpkg';
+    }
+    modelOpt.delegate = 'CPU';
+    AI.seg = await mod.ImageSegmenter.createFromOptions(fileset, {
+      baseOptions: modelOpt,
+      runningMode: 'IMAGE',
+      outputConfidenceMasks: true,
+      outputCategoryMask: false
+    });
+    AI.mode = 'ready'; AI.via = via;
+    aiStatusMsg('Engine ready · MediaPipe selfie segmentation ' + MP_VERSION + ' · ' + via, 'ok');
+    if (S.img) aiSegment();
+  } catch(e){
+    AI.mode = 'failed'; AI.err = String(e && e.message || e);
+    aiStatusMsg('Engine unavailable — ' + AI.err + '. The first run needs the internet; fully offline, load the four files below.', 'bad');
+  }
+}
+
+function maskScore(a, w, h){
+  function box(x0, y0, x1, y1){
+    var sum = 0, n = 0;
+    for (var y = Math.floor(y0*h); y < Math.floor(y1*h); y += 2)
+      for (var x = Math.floor(x0*w); x < Math.floor(x1*w); x += 2){ sum += a[y*w + x]; n++; }
+    return n ? sum/n : 0;
+  }
+  var centre  = box(0.30, 0.12, 0.70, 0.60);
+  var corners = (box(0, 0, 0.12, 0.12) + box(0.88, 0, 1, 0.12)) / 2;
+  return centre - corners;
+}
+
+function aiSegment(){
+  if (AI.mode !== 'ready' || !S.img || !AI.seg) return;
+  aiStatusMsg('Analysing the photo…');
+  setTimeout(function(){
+    try{
+      var maxSide = 768;
+      var k = Math.min(1, maxSide / Math.max(S.iw, S.ih));
+      var mw = Math.max(8, Math.round(S.iw * k));
+      var mh = Math.max(8, Math.round(S.ih * k));
+      var midK = Math.min(1, (maxSide * 2) / Math.max(S.iw, S.ih));
+      var mid = document.createElement('canvas');
+      mid.width  = Math.max(8, Math.round(S.iw * midK));
+      mid.height = Math.max(8, Math.round(S.ih * midK));
+      var mc = mid.getContext('2d');
+      mc.imageSmoothingEnabled = true; mc.imageSmoothingQuality = 'high';
+      mc.drawImage(S.img, 0, 0, mid.width, mid.height);
+      var seg = (mw === mid.width && mh === mid.height) ? mid : hqResize(mid, mw, mh);
+
+      var t0 = performance.now();
+      var res = AI.seg.segment(seg);
+      AI.segMs = performance.now() - t0;
+
+      var masks = res.confidenceMasks || [];
+      var pick = null, best = -1e9, bw = 0, bh = 0;
+      for (var i = 0; i < masks.length; i++){
+        var arr = masks[i].getAsFloat32Array();
+        var aw = masks[i].width || mw, ah = masks[i].height || mh;
+        var sc = maskScore(arr, aw, ah);
+        if (sc > best){ best = sc; pick = arr; bw = aw; bh = ah; }
+      }
+      if (!pick) throw new Error('the model returned no mask');
+      var raw = new Float32Array(pick);            // copy: MPMask memory is reclaimed on close
+      if (res.close) res.close();
+      if (best < 0){ for (var j = 0; j < raw.length; j++) raw[j] = 1 - raw[j]; }
+      if (raw.length === bw * bh && (bw !== mw || bh !== mh)){
+        seg = hqResize(seg, bw, bh); mw = bw; mh = bh;   // align the guide with the mask
+      }
+      AI.rawMask = raw; AI.mw = mw; AI.mh = mh;
+
+      var sd = seg.getContext('2d', { willReadFrequently:true }).getImageData(0, 0, mw, mh).data;
+      var lum = new Float32Array(mw * mh);
+      for (var p2 = 0; p2 < mw * mh; p2++){
+        var q2 = p2 * 4;
+        lum[p2] = (sd[q2]*0.299 + sd[q2+1]*0.587 + sd[q2+2]*0.114) / 255;
+      }
+      AI.lum = lum;
+
+      var cov = 0;
+      for (var p3 = 0; p3 < raw.length; p3++) if (raw[p3] >= 0.5) cov++;
+      AI.coverage = cov / raw.length;
+
+      aiRefine();
+      aiStatusMsg('Engine ready · analysed in ' + Math.round(AI.segMs) + ' ms · ' + AI.via, 'ok');
+      if (aiActive()) requestRender();
+      expRender();
+    } catch(e){
+      aiStatusMsg('Segmentation failed — ' + String(e && e.message || e), 'bad');
+    }
+  }, 30);
+}
+
+function guidedFilter(I, pIn, w, h, r, eps){
+  var n = w * h;
+  var mI = boxBlur(I, w, h, r), mP = boxBlur(pIn, w, h, r);
+  var II = new Float32Array(n), Ip = new Float32Array(n);
+  for (var i = 0; i < n; i++){ II[i] = I[i]*I[i]; Ip[i] = I[i]*pIn[i]; }
+  var cI = boxBlur(II, w, h, r), cIp = boxBlur(Ip, w, h, r);
+  var a = new Float32Array(n), b = new Float32Array(n);
+  for (var j = 0; j < n; j++){
+    var varI = cI[j] - mI[j]*mI[j];
+    var cov  = cIp[j] - mI[j]*mP[j];
+    var aj = cov / (varI + eps);
+    a[j] = aj; b[j] = mP[j] - aj*mI[j];
+  }
+  var mA = boxBlur(a, w, h, r), mB = boxBlur(b, w, h, r);
+  var q = new Float32Array(n);
+  for (var t = 0; t < n; t++){
+    var v = mA[t]*I[t] + mB[t];
+    q[t] = v < 0 ? 0 : (v > 1 ? 1 : v);
+  }
+  return q;
+}
+
+function aiRefine(){
+  if (!AI.rawMask) return;
+  var w = AI.mw, h = AI.mh, n = w * h;
+  var t = AI.thr / 100, win = 0.10;
+  var p = new Float32Array(n);
+  for (var i = 0; i < n; i++){
+    var x = (AI.rawMask[i] - (t - win)) / (2 * win);
+    x = x < 0 ? 0 : (x > 1 ? 1 : x);
+    p[i] = x * x * (3 - 2 * x);
+  }
+  if (AI.refine && AI.lum) p = guidedFilter(AI.lum, p, w, h, 8, 4e-4);
+  if (AI.feather > 0) p = boxBlur(p, w, h, AI.feather | 0);
+  var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  var ctx = cv.getContext('2d');
+  var id = ctx.createImageData(w, h), d = id.data;
+  for (var j = 0; j < n; j++){
+    var v = Math.round(Math.max(0, Math.min(1, p[j])) * 255), q = j * 4;
+    d[q] = v; d[q+1] = v; d[q+2] = v; d[q+3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+  AI.maskCv = cv;
+}
+
+function aiCompositeInto(ctx, g){
+  if (!AI.maskCv) return;
+  var w = g.outW, h = g.outH;
+  var m = document.createElement('canvas'); m.width = w; m.height = h;
+  var mc = m.getContext('2d', { willReadFrequently:true });
+  mc.fillStyle = '#000'; mc.fillRect(0, 0, w, h);
+  mc.imageSmoothingEnabled = true; mc.imageSmoothingQuality = 'high';
+  mc.drawImage(AI.maskCv, g.dx, g.dy, g.dw, g.dh);
+  var md = mc.getImageData(0, 0, w, h).data;
+  var img = ctx.getImageData(0, 0, w, h), d = img.data;
+  var cr = parseInt(S.bgColor.slice(1,3),16),
+      cg = parseInt(S.bgColor.slice(3,5),16),
+      cb = parseInt(S.bgColor.slice(5,7),16);
+  for (var i = 0; i < w * h; i++){
+    var a = md[i*4] / 255, q = i * 4;
+    d[q]   = d[q]  *a + cr*(1-a);
+    d[q+1] = d[q+1]*a + cg*(1-a);
+    d[q+2] = d[q+2]*a + cb*(1-a);
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/* --- side-by-side comparison --- */
+var cmpTimer = null;
+function scheduleCompare(){ clearTimeout(cmpTimer); cmpTimer = setTimeout(expRender, 120); }
+
+function expRender(){
+  var has = !!S.img;
+  els.expNeeds.classList.toggle('hide', has);
+  els.expBody.classList.toggle('hide', !has);
+  if (!has) return;
+  var g = geometry(), w = g.outW, h = g.outH;
+  [els.cmpClassic, els.cmpAI, els.cmpDiff].forEach(function(cv){ cv.width = w; cv.height = h; });
+
+  var a = els.cmpClassic.getContext('2d', { willReadFrequently:true });
+  a.fillStyle = S.bgColor; a.fillRect(0, 0, w, h);
+  a.imageSmoothingQuality = 'high';
+  a.drawImage(S.img, g.dx, g.dy, g.dw, g.dh);
+  replaceBackground(a, w, h);
+
+  var b = els.cmpAI.getContext('2d', { willReadFrequently:true });
+  b.fillStyle = S.bgColor; b.fillRect(0, 0, w, h);
+  b.imageSmoothingQuality = 'high';
+  b.drawImage(S.img, g.dx, g.dy, g.dw, g.dh);
+  if (AI.maskCv) aiCompositeInto(b, g);
+  else { b.fillStyle = 'rgba(255,255,255,.75)'; b.fillRect(0, 0, w, h); }
+
+  var da = a.getImageData(0, 0, w, h).data;
+  var db = b.getImageData(0, 0, w, h).data;
+  var dc = els.cmpDiff.getContext('2d');
+  var dd = dc.createImageData(w, h), dp = dd.data;
+  var diffPx = 0;
+  for (var i = 0; i < w * h; i++){
+    var q = i * 4;
+    var dv = Math.max(Math.abs(da[q]-db[q]), Math.abs(da[q+1]-db[q+1]), Math.abs(da[q+2]-db[q+2]));
+    if (dv > 18) diffPx++;
+    var t = Math.min(1, dv * 3 / 255);
+    dp[q]   = 255 - 60*t;    // -> 195
+    dp[q+1] = 255 - 228*t;   // -> 27
+    dp[q+2] = 255 - 161*t;   // -> 94
+    dp[q+3] = 255;
+  }
+  dc.putImageData(dd, 0, 0);
+  expReadout(diffPx / (w * h));
+}
+
+function expReadout(diffFrac){
+  var rows = [];
+  if (AI.mode === 'ready' && AI.rawMask){
+    rows.push(ro('Engine', 'MediaPipe · ' + AI.via, 'ok', Math.round(AI.segMs) + ' ms to analyse'));
+    rows.push(ro('Person coverage', Math.round(AI.coverage * 100) + '% of frame',
+      (AI.coverage > 0.08 && AI.coverage < 0.9) ? 'ok' : 'warn',
+      'sanity check that the model found a person'));
+  } else if (AI.mode === 'failed'){
+    rows.push(ro('Engine', 'unavailable', 'warn', 'AI pane is dimmed until it loads'));
+  } else {
+    rows.push(ro('Engine', AI.mode, 'warn', ''));
+  }
+  rows.push(ro('Panes disagree on', (diffFrac * 100).toFixed(1) + '% of pixels', 'ok',
+    'shown in magenta — look at the hairline and shoulders'));
+  els.aiOut.innerHTML = rows.join('');
+}
+
+function expSync(){
+  expRender();
+  if (AI.mode === 'idle') aiInit(false);
+  else if (AI.mode === 'ready' && S.img && !AI.rawMask) aiSegment();
+}
+
+function syncSwatches(c){
+  S.bgColor = c;
+  [els.bgSwatch, els.expSwatch].forEach(function(group){
+    Array.prototype.forEach.call(group.children, function(btn){
+      btn.setAttribute('aria-pressed', String(btn.dataset.c === c));
+    });
+  });
+}
+
+/* --- wiring --- */
+els.aiThr.addEventListener('input', function(){
+  AI.thr = +els.aiThr.value;
+  els.aiThrVal.textContent = els.aiThr.value;
+  aiRefine(); expRender();
+  if (aiActive()) requestRender();
+});
+els.aiFeather.addEventListener('input', function(){
+  AI.feather = +els.aiFeather.value;
+  els.aiFeatherVal.textContent = els.aiFeather.value + ' px';
+  aiRefine(); expRender();
+  if (aiActive()) requestRender();
+});
+els.aiRefine.addEventListener('change', function(){
+  AI.refine = els.aiRefine.checked;
+  aiRefine(); expRender();
+  if (aiActive()) requestRender();
+});
+els.aiUse.addEventListener('change', function(){
+  S.bgMode = els.aiUse.checked ? 'ai' : 'classic';
+  render();
+});
+els.aiRerun.addEventListener('click', function(){
+  if (AI.mode === 'ready') aiSegment();
+  else if (AI.mode !== 'loading') aiInit(false);
+});
+els.expGoLoad.addEventListener('click', function(){
+  els.tabBtnPrint.click();
+  (S.img ? els.measurePanel : els.drop).scrollIntoView({ behavior:'smooth', block:'center' });
+  if (!S.img) els.file.click();
+});
+els.expSwatch.addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  syncSwatches(b.dataset.c);
+  render();
+});
+els.aiFilesPick.addEventListener('click', function(){ els.aiFiles.click(); });
+els.aiFiles.addEventListener('change', async function(e){
+  var fl = e.target.files;
+  if (!fl || !fl.length) return;
+  try{
+    for (var i = 0; i < fl.length; i++){
+      var f = fl[i], nm = f.name.toLowerCase(), buf = await f.arrayBuffer();
+      if (nm.slice(-7) === '.tflite') AI.local.model = buf;
+      else if (nm.slice(-5) === '.wasm') AI.local.wasm = buf;
+      else if (nm.indexOf('vision_bundle') > -1) AI.local.bundle = buf;
+      else if (nm.slice(-3) === '.js') AI.local.loader = buf;
+    }
+    AI.mode = 'idle';
+    aiInit(true);
+  } catch(err){
+    aiStatusMsg('Could not read those files — ' + String(err && err.message || err), 'bad');
+  }
+  e.target.value = '';
+});
+
+/* ---------- boot ---------- */
+S.spec = SPECS.filter(function(s){ return s.id === 'us'; })[0];
+S.headMm = S.spec.headDef;
+els.spec.value = S.spec.id;
+syncHeadSlider();
+S.portal = PORTALS.filter(function(p){ return p.id === 'uspass'; })[0];
+S.px = S.portal.pxDef;
+S.capKb = Math.min(S.portal.capKb, 2000);
+S.fmt = S.portal.fmt;
+els.portal.value = S.portal.id;
+syncPortal();
+})();
+</script>
+</body>
+</html>
