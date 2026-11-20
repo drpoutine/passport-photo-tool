@@ -50,8 +50,9 @@ pixels only as a last resort. Presets for:
 - **US visa DS-160 / CEAC** (600–1200 px square JPEG, <240 KB)
 - anything else, with the limits set by hand
 
-Square portals centre-crop non-square photo formats instead of stretching
-them, and the readout tells you when that happens.
+When a portal's shape differs from your photo format — a square portal, or
+Nusuk's 3:4 portrait — the export is cut from the centre of your crop instead
+of being stretched, and the readout tells you when that happens.
 
 ![Digital upload](docs/digital-panel.png)
 
@@ -61,9 +62,10 @@ For portals that want a scan of the passport itself. Crop and rotate at full
 resolution, size the output by **pixels per MRZ character** (the two lines of
 `<<<` text are 44 characters wide — width buys legibility directly), clean up
 paper noise, and inspect the machine-readable strip at 1:1 pixels before you
-upload. A **Nusuk preset** (the default) keeps the page inside Nusuk's enforced
-400–1200 px wide × 400–2000 px tall box at the full 1200 px width. Encodes PNG-8 (in-file quantizer), PNG-24, and JPEG on every pass and
-shows the size of each, so the format choice is informed, not guessed.
+upload. A **Nusuk preset** (the default) keeps the page inside Nusuk's
+enforced 400–1200 px wide × 400–2000 px tall box at the full 1200 px width.
+Encodes PNG-8 (in-file quantizer), PNG-24, and JPEG on every pass and shows
+the size of each, so the format choice is informed, not guessed.
 
 ![Passport page](docs/tab-passport-page.png)
 
@@ -93,7 +95,7 @@ yourself before trusting either.
 **Offline / local:**
 
 1. Download [`passport-photo-4x6-sheet.html`](passport-photo-4x6-sheet.html)
-   (one file, ~130 KB).
+   (one file, ~140 KB).
 2. Double-click it. It opens and works from `file://` — no server needed.
 3. Drop in a photo.
 
