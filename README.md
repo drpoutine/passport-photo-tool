@@ -44,7 +44,7 @@ land just under the cap, climbs back up if a portal has a minimum, and shrinks
 pixels only as a last resort. Presets for:
 
 - **Ireland** Passport Online (≥715×951 px, <9 MB — height checked, not just width)
-- **Nusuk** Hajj personal photo (≤200×200 px, ≤1 MB, lossless PNG by default)
+- **Nusuk** Hajj personal photo (exactly 480×640 px, ≤1 MB — centre-cut from your crop, never stretched)
 - **Saudi eVisa** (exactly 200×200 px, 5–100 KB — the 5 KB floor is enforced too)
 - **US passport** online renewal (600–1200 px, 54 KB–10 MB)
 - **US visa DS-160 / CEAC** (600–1200 px square JPEG, <240 KB)
@@ -61,7 +61,8 @@ For portals that want a scan of the passport itself. Crop and rotate at full
 resolution, size the output by **pixels per MRZ character** (the two lines of
 `<<<` text are 44 characters wide — width buys legibility directly), clean up
 paper noise, and inspect the machine-readable strip at 1:1 pixels before you
-upload. Encodes PNG-8 (in-file quantizer), PNG-24, and JPEG on every pass and
+upload. A **Nusuk preset** (the default) keeps the page inside Nusuk's enforced
+400–1200 px wide × 400–2000 px tall box at the full 1200 px width. Encodes PNG-8 (in-file quantizer), PNG-24, and JPEG on every pass and
 shows the size of each, so the format choice is informed, not guessed.
 
 ![Passport page](docs/tab-passport-page.png)

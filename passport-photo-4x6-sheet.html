@@ -644,28 +644,29 @@ footer{
             <div class="field" style="margin-top:16px">
               <div class="flabel"><span>Portal preset</span></div>
               <select id="docPreset">
-                <option value="800x400">800 × 400 — landscape (recommended)</option>
+                <option value="nusuk" selected>Nusuk — 400–1200 wide × 400–2000 tall (recommended)</option>
+                <option value="800x400">800 × 400 — landscape</option>
                 <option value="400x800">400 × 800 — portrait, as literally written</option>
                 <option value="400x400">400 × 400 — satisfies either reading</option>
                 <option value="1600x1600">1600 × 1600 — other portals</option>
-                <option value="custom" selected>Custom — set the width yourself</option>
+                <option value="custom">Custom — set the width yourself</option>
                 <option value="orig">Keep the original size</option>
               </select>
               <p class="draghint" style="text-align:left;margin-top:7px">Sets a starting point for the slider below and marks the recommended box in the readout — the slider has the final say on size.</p>
             </div>
 
-            <div class="field" id="customField">
+            <div class="field hide" id="customField">
               <div class="flabel"><span>Custom size</span><span class="val">width × height cap, px</span></div>
               <div style="display:flex;gap:10px">
-                <input type="number" class="numin" id="docCustomW" min="200" max="6000" step="10" value="1584" aria-label="Width in pixels" style="flex:1">
+                <input type="number" class="numin" id="docCustomW" min="200" max="6000" step="10" value="1200" aria-label="Width in pixels" style="flex:1">
                 <input type="number" class="numin" id="docCustomH" min="0" max="6000" step="10" value="0" aria-label="Height cap in pixels, zero follows the crop" style="flex:1">
               </div>
               <p class="draghint" style="text-align:left;margin-top:7px">Height 0 lets the height follow the crop. A height cap shrinks the whole page to fit under it — the page keeps its shape, nothing stretches.</p>
             </div>
 
             <div class="field" id="resField">
-              <div class="flabel"><span>Resolution — text clarity</span><span class="val" id="docResVal">36 px/char · 1584 px wide</span></div>
-              <input type="range" id="docRes" min="8" max="36" value="36">
+              <div class="flabel"><span>Resolution — text clarity</span><span class="val" id="docResVal">27.3 px/char · 1200 px wide</span></div>
+              <input type="range" id="docRes" min="8" max="36" value="27">
               <p class="draghint" style="text-align:left;margin-top:7px">The machine-readable strip is 44 characters across, so width buys clarity directly. 12+ px per character reads cleanly. The file-size cap below still has the last word, and it never upscales past what your crop actually contains.</p>
             </div>
 
@@ -827,9 +828,9 @@ var PORTALS = [
   { id:'ie', label:'Ireland — Passport Online upload', square:false,
     pxMin:715, pxMax:1600, pxDef:740, pxMinH:951, capKb:9000, kbMin:0, fmt:'jpeg', lockFmt:true,
     note:'JPEG at least 715 × 951 px, no larger than 9 MB. A scan of a printed photo is not accepted — this must come from the original digital file.' },
-  { id:'nusuk', label:'Nusuk — Hajj personal photo', square:true, maxOnly:true,
-    pxMin:120, pxMax:200, pxDef:200, capKb:1000, kbMin:0, fmt:'png', lockFmt:false,
-    note:'PNG or JPG, at most 200 × 200 px, up to 1 MB. That budget is enormous at this size, so PNG is seeded as the format — lossless, and still only about 8% of the limit. White background, formal attire, only you in the frame; the framing from the photo panels carries over, since Nusuk publishes no head-size rule. The known rejection “attachment does not match entered data” is a form-field mismatch, not an image problem.' },
+  { id:'nusuk', label:'Nusuk — Hajj personal photo', square:false, fixH:640,
+    pxMin:480, pxMax:480, pxDef:480, capKb:975, kbMin:0, fmt:'jpeg', lockFmt:false,
+    note:'PNG or JPG, exactly 480 × 640 px (width × height), up to 1 MB — the rule Nusuk published in November 2026, replacing the old 200 × 200 maximum. The cap is held at 975 KB so the file is under 1 MB however the portal counts a megabyte. A 3:4 portrait is cut from the centre of your crop, so a 35 × 45 mm framing carries over almost untouched; Nusuk publishes no head-size rule. White background, formal attire, only you in the frame. The known rejection “attachment does not match entered data” is a form-field mismatch, not an image problem.' },
   { id:'sa', label:'Saudi eVisa — visa.visitsaudi.com', square:true,
     pxMin:200, pxMax:200, pxDef:200, capKb:100, kbMin:5, fmt:'jpeg', lockFmt:false,
     note:'Exactly 200 × 200 px, and the file must be between 5 KB and 100 KB. The floor matters as much as the ceiling here — a 200 × 200 image compressed hard can easily fall under 5 KB and be rejected for being too small. Background plain white, no pattern, only you in the frame, taken within the last six months.' },
@@ -1769,6 +1770,7 @@ function syncPortal(){
 
 function digitalDims(){
   var p = S.portal, s = S.spec;
+  if (p.fixH) return { w:p.pxMin, h:p.fixH };
   if (p.square || Math.abs(s.w - s.h) < 0.01) return { w:S.px, h:S.px };
   // portrait document: the slider sets the shorter side, height follows the ratio
   return { w:S.px, h:Math.round(S.px * s.h / s.w) };
@@ -1780,7 +1782,7 @@ function updateDigitalLabels(){
   els.capVal.textContent = S.fmt === 'png' ? 'not adjustable' :
     (S.capKb >= 1000 ? (S.capKb / 1000).toFixed(1) + ' MB' : S.capKb + ' KB');
   els.pxRange.textContent = p.pxMin === p.pxMax
-    ? 'this portal requires exactly ' + p.pxMin + ' × ' + p.pxMin + ' px'
+    ? 'this portal requires exactly ' + d.w + ' × ' + d.h + ' px'
     : (p.maxOnly
         ? 'portal caps at ' + p.pxMax + ' × ' + p.pxMax + ' px — smaller is accepted, but there is no reason to go lower'
         : (p.square
@@ -1834,16 +1836,18 @@ function exportDigital(){
 
   var squared = false;
   function renderAt(w, h){
-    // oneCanvas may be rectangular if a non-square document spec is selected;
-    // take the square at full resolution first, then resample once
-    var src = oneCanvas;
-    if (w === h && oneCanvas.width !== oneCanvas.height){
-      var sw = oneCanvas.width, sh = oneCanvas.height, side = Math.min(sw, sh);
+    // a portal shape that differs from the document's (a square portal, or
+    // Nusuk's fixed 3:4) gets the centre cut at full resolution first, then
+    // one resample — never a stretch. Rounding-level differences are ignored.
+    var src = oneCanvas, sw = oneCanvas.width, sh = oneCanvas.height;
+    if (Math.abs(sw / sh - w / h) > 0.005 * (w / h)){
+      var cw = sw, chh = sh;
+      if (sw / sh > w / h) cw = Math.round(sh * w / h); else chh = Math.round(sw * h / w);
       var sq = document.createElement('canvas');
-      sq.width = side; sq.height = side;
+      sq.width = cw; sq.height = chh;
       var sqc = sq.getContext('2d');
-      sqc.fillStyle = '#fff'; sqc.fillRect(0, 0, side, side);
-      sqc.drawImage(oneCanvas, (sw - side) / 2, (sh - side) / 2, side, side, 0, 0, side, side);
+      sqc.fillStyle = '#fff'; sqc.fillRect(0, 0, cw, chh);
+      sqc.drawImage(oneCanvas, (sw - cw) / 2, (sh - chh) / 2, cw, chh, 0, 0, cw, chh);
       src = sq; squared = true;
     }
     var scaled = hqResize(src, w, h);
@@ -1930,7 +1934,8 @@ function digitalReadout(){
   var p = S.portal, L = lastDigital, sp = S.spec, out = [];
   var cap = S.capKb * 1024;
 
-  var dimsOk = L.w >= p.pxMin && L.w <= p.pxMax && (!p.pxMinH || L.h >= p.pxMinH);
+  var dimsOk = L.w >= p.pxMin && L.w <= p.pxMax && (!p.pxMinH || L.h >= p.pxMinH) &&
+               (!p.fixH || L.h === p.fixH);
   out.push(ro('Dimensions', L.w + ' × ' + L.h + ' px',
     dimsOk ? 'ok' : 'warn',
     L.shrunk ? 'shrunk automatically to meet the size cap'
@@ -1939,8 +1944,8 @@ function digitalReadout(){
             ? 'height under the ' + p.pxMinH + ' px minimum — raise the pixel slider'
             : 'outside ' + p.pxMin + '–' + p.pxMax + ' px'))));
   if (L.sq)
-    out.push(ro('Framing', 'centre square', '',
-      'this portal is square — the centre square of the ' + sp.w + ' × ' + sp.h + ' mm crop is used'));
+    out.push(ro('Framing', L.w === L.h ? 'centre square' : 'centre ' + L.w + ':' + L.h, '',
+      'the portal\'s shape differs from ' + sp.w + ' × ' + sp.h + ' mm — the centre of your crop is used, nothing is stretched'));
 
   var over = L.fmt === 'jpeg' && L.bytes > cap;
   var under = p.kbMin && L.bytes < p.kbMin * 1024;
@@ -2162,9 +2167,9 @@ function cleanPaper(cv, amount, gray){
 
 /* ---------- Passport page ---------- */
 
-var DOC = { img:null, rot:0, fmt:'jpeg', capKb:1000, preset:'custom', sharp:0,
+var DOC = { img:null, rot:0, fmt:'jpeg', capKb:1000, preset:'nusuk', sharp:0,
             clean:0, colors:128, gray:false,
-            res:36, strip:0.12, zoomX:'fit', srcW:0, srcH:0, customH:0, outCv:null,
+            res:1200 / 44, portalCapped:false, strip:0.12, zoomX:'fit', srcW:0, srcH:0, customH:0, outCv:null,
             crop:{ x:0, y:0, w:1, h:1 }, sizes:{}, jpegQ:null,
             blob:null, url:null, w:0, h:0, shrunk:false, srcBytes:0, pdfNote:null };
 var docTimer = null, docToken = 0;
@@ -2434,7 +2439,7 @@ els.docReset.addEventListener('click', function(){
   DOC.crop = { x:0, y:0, w:1, h:1 }; paintCrop(); docExport();
 });
 
-var PRESET_RES = { '800x400':18, '400x800':9, '400x400':9, '1600x1600':36 };
+var PRESET_RES = { nusuk:1200 / 44, '800x400':18, '400x800':9, '400x400':9, '1600x1600':36 };
 function syncResLabel(){
   var wpx = Math.round(DOC.res * 44);
   els.docResVal.textContent = (Math.round(DOC.res * 10) / 10) + ' px/char · ' + wpx + ' px wide';
@@ -2517,6 +2522,8 @@ els.docCap.addEventListener('input', function(){
 
 function docBounds(){
   if (DOC.preset === 'orig' || DOC.preset === 'custom') return null;
+  // Nusuk enforces a range on both axes and rejects anything outside it
+  if (DOC.preset === 'nusuk') return { w:1200, h:2000, minW:400, minH:400, hard:true };
   var p = DOC.preset.split('x');
   return { w:+p[0], h:+p[1] };
 }
@@ -2556,6 +2563,9 @@ function docExport(){
 
   var k = (DOC.preset === 'orig') ? 1 : Math.min(1, (DOC.res * 44) / src.w);
   if (DOC.preset === 'custom' && DOC.customH > 0) k = Math.min(k, DOC.customH / src.h);
+  var kAsked = k;
+  if (b && b.hard) k = Math.min(k, b.w / src.w, b.h / src.h);
+  DOC.portalCapped = k < kAsked - 1e-9;
   var w = Math.max(1, Math.round(src.w * k)), h = Math.max(1, Math.round(src.h * k));
   var target = DOC.capKb * 1024;
 
@@ -2616,7 +2626,9 @@ function docExport(){
       if (!pick) return;
 
       // Only shrink the image if the chosen encoding genuinely cannot fit.
-      if (pick.size > target && ww > 200){
+      if (pick.size > target && ((b && b.minW)
+          ? (Math.round(ww * 0.9) >= b.minW && Math.round(hh * 0.9) >= b.minH)
+          : ww > 200)){
         var anyFits = (cand.png8 && cand.png8.size <= target) ||
                       (cand.jpeg && cand.jpeg.size <= target);
         if (!anyFits){ run(Math.round(ww * 0.9), Math.round(hh * 0.9), true); return; }
@@ -2658,7 +2670,8 @@ function drawZoom(cv){
 
 function docReadout(){
   var b = docBounds(), cap = DOC.capKb * 1024, out = [];
-  var fits = !b || (DOC.w <= b.w && DOC.h <= b.h);
+  var fits = !b || (DOC.w <= b.w && DOC.h <= b.h &&
+                    (!b.minW || (DOC.w >= b.minW && DOC.h >= b.minH)));
   var hCapped = DOC.preset === 'custom' && DOC.customH > 0 && DOC.srcH > 0 &&
                 (DOC.customH / DOC.srcH) < Math.min(1, (DOC.res * 44) / DOC.srcW);
 
@@ -2668,8 +2681,13 @@ function docReadout(){
       : (!b ? (DOC.preset === 'custom'
               ? (hCapped ? 'the height cap set the size' : 'width set by hand')
               : 'original size kept')
-        : (fits ? 'fits inside ' + b.w + ' × ' + b.h
-                : 'bigger than the ' + b.w + ' × ' + b.h + ' preset — fine when the portal only enforces file size'))));
+        : (b.hard
+            ? (fits ? 'inside Nusuk\'s ' + b.minW + '–' + b.w + ' × ' + b.minH + '–' + b.h + ' px'
+                    : ((DOC.w < b.minW || DOC.h < b.minH)
+                        ? 'under Nusuk\'s ' + b.minW + ' px minimum — the crop is too small; crop less tightly or use a larger scan'
+                        : 'outside Nusuk\'s ' + b.minW + '–' + b.w + ' × ' + b.minH + '–' + b.h + ' px — it will be rejected'))
+            : (fits ? 'fits inside ' + b.w + ' × ' + b.h
+                    : 'bigger than the ' + b.w + ' × ' + b.h + ' preset — fine when the portal only enforces file size')))));
 
   // The machine-readable zone is 44 characters across the full page width.
   // Below roughly 10 px per character, OCR starts guessing.
@@ -2680,6 +2698,8 @@ function docReadout(){
                       : 'too coarse for reliable OCR — raise the resolution slider');
   if (asked && DOC.shrunk)
     mrzNote = 'the size cap pulled it below your ' + Math.round(asked) + ' px ask — raise the cap, clean up more, or use PNG 8-bit';
+  else if (asked && DOC.portalCapped && perChar + 0.4 < asked)
+    mrzNote = 'Nusuk caps the page at 1200 px wide and 2000 px tall — this is the most detail it accepts';
   else if (asked && hCapped && perChar + 0.4 < asked)
     mrzNote = 'limited by your height cap — raise it for more detail';
   else if (asked && perChar + 0.4 < asked)
@@ -2713,8 +2733,9 @@ function docReadout(){
   els.docNote.innerHTML = '<strong>Read the strip above before uploading.</strong> ' +
     'If those characters are not sharp enough for you to read, an automated reader will not manage either. ' +
     (!landscape ? 'A bio page is a landscape document — leaving it portrait spends the pixel budget on the wrong axis. ' : '') +
-    'In practice Nusuk has accepted a full-resolution upload well above 800 × 400, so the hard rule is the 1 MB file size — ' +
-    'treat the published dimensions as advisory, keep it landscape, and spend the whole megabyte on legible text.';
+    'Nusuk now enforces its dimensions: width 400–1200 px, height 400–2000 px, up to 1 MB — a 1584 px wide page that ' +
+    'used to pass is rejected since November 2026. The Nusuk preset keeps you inside that box at the full 1200 px width; ' +
+    'keep it landscape so those pixels go across the text.';
 }
 
 els.docDl.addEventListener('click', function(){
