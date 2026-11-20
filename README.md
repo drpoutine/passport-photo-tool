@@ -142,3 +142,10 @@ expression, glasses, or background colour — the things that cause most
 rejections. Check the issuing authority's current requirements before you
 submit or pay for prints. The demo images in this README are synthetic
 specimens, not real people or documents.
+
+## License
+
+[MIT](LICENSE) — use it, copy it, modify it, host your own copy. The optional
+engines the page can load at runtime keep their own licenses: MediaPipe and
+pdf.js are Apache-2.0, the IBM Plex fonts are OFL-1.1. None of them is bundled
+in this repository.
